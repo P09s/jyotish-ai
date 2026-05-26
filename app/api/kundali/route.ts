@@ -1,29 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
+import * as Astronomy from 'astronomy-engine'
 
-// ── Planet & sign constants ──────────────────────────────
-const PLANETS = [
-  { id: 0,  name: 'Sun',     sanskrit: 'Surya',   symbol: '☉' },
-  { id: 1,  name: 'Moon',    sanskrit: 'Chandra',  symbol: '☽' },
-  { id: 2,  name: 'Mars',    sanskrit: 'Mangal',   symbol: '♂' },
-  { id: 3,  name: 'Mercury', sanskrit: 'Budha',    symbol: '☿' },
-  { id: 4,  name: 'Jupiter', sanskrit: 'Guru',     symbol: '♃' },
-  { id: 5,  name: 'Venus',   sanskrit: 'Shukra',   symbol: '♀' },
-  { id: 6,  name: 'Saturn',  sanskrit: 'Shani',    symbol: '♄' },
-  { id: 11, name: 'Rahu',    sanskrit: 'Rahu',     symbol: '☊' },
-  { id: 11, name: 'Ketu',    sanskrit: 'Ketu',     symbol: '☋', isKetu: true },
-]
-
-const SIGNS = [
-  'Aries','Taurus','Gemini','Cancer','Leo','Virgo',
-  'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'
-]
-
-const SIGN_SANSKRIT = [
-  'Mesha','Vrishabha','Mithuna','Karka','Simha','Kanya',
-  'Tula','Vrishchika','Dhanu','Makara','Kumbha','Meena'
-]
-
+// ── Constants ─────────────────────────────────────────────────────────────────
+const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
+const SIGN_SANSKRIT = ['Mesha','Vrishabha','Mithuna','Karka','Simha','Kanya','Tula','Vrishchika','Dhanu','Makara','Kumbha','Meena']
 const NAKSHATRAS = [
   'Ashwini','Bharani','Krittika','Rohini','Mrigashira','Ardra',
   'Punarvasu','Pushya','Ashlesha','Magha','Purva Phalguni','Uttara Phalguni',
@@ -31,149 +12,135 @@ const NAKSHATRAS = [
   'Mula','Purva Ashadha','Uttara Ashadha','Shravana','Dhanishtha','Shatabhisha',
   'Purva Bhadrapada','Uttara Bhadrapada','Revati'
 ]
-
-// Vimshottari Dasha sequence and years
-const DASHA_LORDS = ['Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury']
-const DASHA_YEARS = { Ketu:7, Venus:20, Sun:6, Moon:10, Mars:7, Rahu:18, Jupiter:16, Saturn:19, Mercury:17 }
-const DASHA_TOTAL = 120
-
-// Nakshatra → Dasha lord mapping (27 nakshatras, repeating 3 lords each)
 const NAKSHATRA_LORD = [
-  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury', // 1-9
-  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury', // 10-18
-  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury'  // 19-27
+  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury',
+  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury',
+  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury'
 ]
+const DASHA_LORDS = ['Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury']
+const DASHA_YEARS: Record<string,number> = {Ketu:7,Venus:20,Sun:6,Moon:10,Mars:7,Rahu:18,Jupiter:16,Saturn:19,Mercury:17}
 
-// ── Helpers ──────────────────────────────────────────────
-function getLongitudeWithAyanamsa(longitude: number, ayanamsa = 23.85): number {
-  // Lahiri ayanamsa ~23.85° for 2024 (approx; swisseph gives exact)
-  let sidereal = longitude - ayanamsa
-  if (sidereal < 0) sidereal += 360
-  return sidereal
-}
+// ── Math helpers ──────────────────────────────────────────────────────────────
+function norm360(x: number): number { return ((x % 360) + 360) % 360 }
+function toRad(d: number): number   { return d * Math.PI / 180 }
+function toDeg(r: number): number   { return r * 180 / Math.PI }
 
-function getSign(longitude: number) {
-  const idx = Math.floor(longitude / 30)
-  return { index: idx, name: SIGNS[idx], sanskrit: SIGN_SANSKRIT[idx], degree: longitude % 30 }
-}
-
-function getNakshatra(moonLongitude: number) {
-  const idx = Math.floor(moonLongitude / (360 / 27))
-  const pada = Math.floor((moonLongitude % (360 / 27)) / (360 / 108)) + 1
-  return {
-    index: idx,
-    name: NAKSHATRAS[idx],
-    pada,
-    lord: NAKSHATRA_LORD[idx]
-  }
-}
-
-function dateToJulianDay(year: number, month: number, day: number, hour: number): number {
-  // Standard Julian Day formula
-  if (month <= 2) { year -= 1; month += 12 }
+// ── Julian Day ────────────────────────────────────────────────────────────────
+function toJD(year: number, month: number, day: number, hourUT: number): number {
+  if (month <= 2) { year--; month += 12 }
   const A = Math.floor(year / 100)
   const B = 2 - A + Math.floor(A / 4)
-  return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + hour / 24 + B - 1524.5
+  return Math.floor(365.25*(year+4716)) + Math.floor(30.6001*(month+1)) + day + hourUT/24 + B - 1524.5
 }
 
-function calcPlanetPosition(jd: number, planetId: number): number {
-  // Simplified VSOP87-derived mean longitude calculations
-  // For production: replace with swisseph-wasm calls
-  const T = (jd - 2451545.0) / 36525 // Julian centuries from J2000
+// ── Lahiri Ayanamsa ───────────────────────────────────────────────────────────
+function getLahiriAyanamsa(T: number): number {
+  return 23.853056 + (50.29 / 3600) * T * 100
+}
 
-  const meanLongitudes: Record<number, number> = {
-    0:  (280.46646 + 36000.76983 * T) % 360,   // Sun
-    1:  (218.3165 + 481267.8813 * T) % 360,     // Moon
-    2:  (355.433 + 19140.2993 * T) % 360,       // Mars
-    3:  (252.251 + 149472.6746 * T) % 360,      // Mercury
-    4:  (34.351 + 3034.9057 * T) % 360,         // Jupiter
-    5:  (181.979 + 58517.8156 * T) % 360,       // Venus
-    6:  (50.0774 + 1222.1138 * T) % 360,        // Saturn
-    11: (125.0445 - 1934.1363 * T) % 360,       // Rahu (north node — retrograde)
+// ── Rahu true node ──────────────────────────────────────────────
+function calcRahuTropical(T: number): number {
+  const T2 = T * T, T3 = T2 * T
+  const D  = norm360(297.8501921 + 445267.1114034*T)
+  const M  = norm360(357.5291092 + 35999.0502909*T)
+  const Mp = norm360(134.9633964 + 477198.8675055*T)
+  const F  = norm360(93.2720950  + 483202.0175233*T)
+  const Om = norm360(125.04452 - 1934.13626*T + 0.00207*T2 + T3/450000)
+  const dOm = -1.4979*Math.sin(toRad(2*(D-F)))
+            - 0.1500*Math.sin(toRad(M))
+            - 0.1226*Math.sin(toRad(2*D))
+            + 0.1176*Math.sin(toRad(2*F))
+            - 0.0801*Math.sin(toRad(2*(Mp-F)))
+  return norm360(Om + dOm)
+}
+
+// ── Ascendant ───────────────────────────────
+function calcAscendantTropical(jd: number, latDeg: number, lonDeg: number): number {
+  const T = (jd - 2451545.0) / 36525.0
+  const T2 = T * T, T3 = T2 * T
+  const GMST = norm360(280.46061837 + 360.98564736629*(jd-2451545.0) + 0.000387933*T2 - T3/38710000)
+  const LST  = norm360(GMST + lonDeg)
+  const RAMCrad = toRad(LST)
+  const eps = 23.4392911 - 0.01300416667*T - 0.00000163889*T2 + 0.00000050361*T3
+  const epsRad = toRad(eps), latRad = toRad(latDeg)
+  return norm360(toDeg(Math.atan2(
+    Math.cos(RAMCrad),
+    -(Math.sin(RAMCrad)*Math.cos(epsRad) + Math.tan(latRad)*Math.sin(epsRad))
+  )))
+}
+
+// ── Retrograde detection ────────────────────────────────────────
+function isRetrograde(planetSid: number, sunSid: number, innerPlanet: boolean, outerThreshold = [115, 245]): boolean {
+  const elong = norm360(planetSid - sunSid)
+  if (innerPlanet) {
+    return elong < 28 || elong > 332 
   }
-
-  let lng = meanLongitudes[planetId] ?? 0
-  if (lng < 0) lng += 360
-  return lng
+  return elong > outerThreshold[0] && elong < outerThreshold[1]
 }
 
-function calcAscendant(jd: number, lat: number, lng: number): number {
-  // Simplified Ascendant calculation (whole sign based on LST)
-  const T = (jd - 2451545.0) / 36525
-  // Greenwich Sidereal Time
-  let GST = 280.46061837 + 360.98564736629 * (jd - 2451545) + 0.000387933 * T * T
-  GST = ((GST % 360) + 360) % 360
-  // Local Sidereal Time
-  const LST = (GST + lng) % 360
-  // Simplified Ascendant (tropical)
-  const RAMC = LST
-  const obliquity = 23.4393 - 0.013 * T
-  const ascTropical = Math.atan2(
-    Math.cos(RAMC * Math.PI / 180),
-    -(Math.sin(RAMC * Math.PI / 180) * Math.cos(obliquity * Math.PI / 180) +
-      Math.tan(lat * Math.PI / 180) * Math.sin(obliquity * Math.PI / 180))
-  ) * 180 / Math.PI
-  return ((ascTropical % 360) + 360) % 360
+// ── Nakshatra ─────────────────────────────────────────────────────────────────
+function getNakshatra(lon: number) {
+  const span = 360 / 27
+  const idx  = Math.floor(lon / span)
+  const pada = Math.floor((lon % span) / (span / 4)) + 1
+  return { index: idx, name: NAKSHATRAS[idx], pada, lord: NAKSHATRA_LORD[idx] }
 }
 
-function calcVimshottariDasha(moonLongitude: number, birthDate: Date) {
-  const nakshatra = getNakshatra(moonLongitude)
-  const nakshatraSpan = 360 / 27 // 13.333°
-  const degInNakshatra = moonLongitude % nakshatraSpan
-  const fractionElapsed = degInNakshatra / nakshatraSpan
+// ── Vimshottari Dasha ────────────────────
+function calcDasha(moonSid: number, birthDateUTC: Date) {
+  const nak = getNakshatra(moonSid)
+  const span = 360 / 27
+  const fractionElapsed = (moonSid % span) / span
+  const startLord   = nak.lord
+  const startIdx    = DASHA_LORDS.indexOf(startLord)
+  const startYears  = DASHA_YEARS[startLord]
+  const yearsRemaining = startYears * (1 - fractionElapsed)
 
-  // Find starting dasha lord
-  const startLord = nakshatra.lord
-  const startLordIdx = DASHA_LORDS.indexOf(startLord)
+  const MS_PER_YEAR = 365.25 * 24 * 3600 * 1000
+  const now = new Date()
 
-  // Years remaining in current dasha at birth
-  const startDashaYears = DASHA_YEARS[startLord as keyof typeof DASHA_YEARS]
-  const yearsElapsed = fractionElapsed * startDashaYears
-  const yearsRemaining = startDashaYears - yearsElapsed
+  const dashas: any[] = []
+  let cur = birthDateUTC.getTime()
 
-  const dashas = []
-  let currentDate = new Date(birthDate)
-
-  // Add remaining portion of current dasha
-  const endOfFirst = new Date(currentDate)
-  endOfFirst.setFullYear(endOfFirst.getFullYear() + Math.floor(yearsRemaining))
-  endOfFirst.setMonth(endOfFirst.getMonth() + Math.round((yearsRemaining % 1) * 12))
-
+  const end0 = cur + yearsRemaining * MS_PER_YEAR
+  const isCur0 = now.getTime() >= cur && now.getTime() <= end0
   dashas.push({
-    lord: startLord,
-    years: startDashaYears,
-    start: currentDate.toISOString().split('T')[0],
-    end: endOfFirst.toISOString().split('T')[0],
-    isCurrent: true,
+    lord: startLord, years: startYears,
+    start: new Date(cur).toISOString().split('T')[0],
+    end:   new Date(end0).toISOString().split('T')[0],
+    isCurrent: isCur0,
     yearsRemaining: parseFloat(yearsRemaining.toFixed(2))
   })
+  cur = end0
 
-  currentDate = new Date(endOfFirst)
-
-  // Next 8 dashas in sequence
   for (let i = 1; i < 9; i++) {
-    const lordIdx = (startLordIdx + i) % 9
-    const lord = DASHA_LORDS[lordIdx]
-    const years = DASHA_YEARS[lord as keyof typeof DASHA_YEARS]
-    const endDate = new Date(currentDate)
-    endDate.setFullYear(endDate.getFullYear() + Math.floor(years))
-    endDate.setMonth(endDate.getMonth() + Math.round((years % 1) * 12))
-
+    const lord  = DASHA_LORDS[(startIdx + i) % 9]
+    const years = DASHA_YEARS[lord]
+    const end   = cur + years * MS_PER_YEAR
+    const isCur = now.getTime() >= cur && now.getTime() <= end
     dashas.push({
-      lord,
-      years,
-      start: currentDate.toISOString().split('T')[0],
-      end: endDate.toISOString().split('T')[0],
-      isCurrent: false
+      lord, years,
+      start: new Date(cur).toISOString().split('T')[0],
+      end:   new Date(end).toISOString().split('T')[0],
+      isCurrent: isCur
     })
-
-    currentDate = new Date(endDate)
+    cur = end
   }
 
   return dashas
 }
 
-// ── Main route ───────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getSign(lon: number) {
+  const idx = Math.floor((lon + 0.000001) / 30)
+  return { index: idx, name: SIGNS[idx], sanskrit: SIGN_SANSKRIT[idx], degree: lon % 30 }
+}
+
+function sidToSidereal(tropical: number, ayanamsa: number) {
+  return norm360(tropical - ayanamsa)
+}
+
+// ── POST — calculate chart ────────────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
@@ -181,129 +148,150 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { date_of_birth, time_of_birth, latitude, longitude, timezone } = await request.json()
+    if (!date_of_birth || latitude == null || longitude == null)
+      return NextResponse.json({ error: 'date_of_birth, latitude, longitude required' }, { status: 400 })
 
-    if (!date_of_birth || !latitude || !longitude) {
-      return NextResponse.json({ error: 'date_of_birth, latitude, and longitude are required' }, { status: 400 })
-    }
-
-    // Parse birth datetime
     const [year, month, day] = date_of_birth.split('-').map(Number)
     const [hour = 12, minute = 0] = (time_of_birth || '12:00').split(':').map(Number)
-    const hourDecimal = hour + minute / 60
 
-    // Convert local time to UTC (approximate; in production use timezone offset)
-    const birthDateUTC = new Date(`${date_of_birth}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00`)
+    const TZ_OFFSETS: Record<string,number> = {
+      'Asia/Kolkata':5.5,'Asia/Calcutta':5.5,
+      'Asia/Dubai':4,'Asia/Singapore':8,'Asia/Tokyo':9,'Asia/Bangkok':7,
+      'Asia/Shanghai':8,'Asia/Seoul':9,'Asia/Karachi':5,'Asia/Dhaka':6,
+      'America/New_York':-5,'America/Los_Angeles':-8,'America/Chicago':-6,
+      'America/Denver':-7,'America/Toronto':-5,'America/Sao_Paulo':-3,
+      'Europe/London':0,'Europe/Paris':1,'Europe/Berlin':1,'Europe/Moscow':3,
+      'Australia/Sydney':10,'Australia/Melbourne':10,'Pacific/Auckland':12,
+      'Africa/Cairo':2,'Africa/Johannesburg':2,
+    }
+    const utcOffset = TZ_OFFSETS[timezone] ?? 5.5
+    const hourUT = (hour + minute / 60) - utcOffset
 
-    // Julian Day
-    const jd = dateToJulianDay(year, month, day, hourDecimal)
+    const jd = toJD(year, month, day, hourUT)
+    const T  = (jd - 2451545.0) / 36525.0
+    const ayanamsa = getLahiriAyanamsa(T)
 
-    // Lahiri Ayanamsa (approximate; swisseph gives exact value per date)
-    // Precise formula: 23.85° circa 2024, changes ~0.013°/year from 2000
-    const yearsFrom2000 = year - 2000
-    const ayanamsa = 23.85 + (yearsFrom2000 * 0.013)
+    // Set up Astronomy Engine Date (UTC)
+    const dateUTC = new Date(Date.UTC(year, month - 1, day, Math.floor(hourUT), Math.round((hourUT % 1) * 60)))
+    const astroTime = new Astronomy.AstroTime(dateUTC)
 
-    // Calculate all planets
-    const planetData = PLANETS.map(planet => {
-      const tropicalLng = calcPlanetPosition(jd, planet.isKetu ? 11 : planet.id)
-      // Ketu is exactly opposite Rahu
-      const adjustedTropical = planet.isKetu ? (tropicalLng + 180) % 360 : tropicalLng
-      const siderealLng = getLongitudeWithAyanamsa(adjustedTropical, ayanamsa)
-      const sign = getSign(siderealLng)
-
-      return {
-        id: planet.id,
-        name: planet.name,
-        sanskrit: planet.sanskrit,
-        symbol: planet.symbol,
-        longitude: parseFloat(siderealLng.toFixed(4)),
-        sign: sign.name,
-        sign_sanskrit: sign.sanskrit,
-        sign_index: sign.index,
-        degree: parseFloat(sign.degree.toFixed(2)),
-        house: sign.index + 1, // Will be recalculated relative to Lagna below
-        isRetrograde: planet.id === 11 || planet.isKetu ? true : false // Rahu/Ketu always retrograde
+    // ✅ FIX: Use .elon (ecliptic longitude) instead of .lon
+    const getGeocentricLon = (body: string) => {
+      if (body === 'Sun') {
+        return Astronomy.SunPosition(astroTime).elon;
       }
-    })
+      
+      const vector = Astronomy.GeoVector(body as any, astroTime, true);
+      return Astronomy.Ecliptic(vector).elon;
+    };
 
-    // Ascendant (Lagna)
-    const tropicalAsc = calcAscendant(jd, latitude, longitude)
-    const siderealAsc = getLongitudeWithAyanamsa(tropicalAsc, ayanamsa)
-    const lagnaSign = getSign(siderealAsc)
+    const sunTrop  = getGeocentricLon('Sun');
+    const moonTrop = getGeocentricLon('Moon');
+    const marsTrop = getGeocentricLon('Mars');
+    const mercTrop = getGeocentricLon('Mercury');
+    const jupTrop  = getGeocentricLon('Jupiter');
+    const venTrop  = getGeocentricLon('Venus');
+    const satTrop  = getGeocentricLon('Saturn');
 
-    // Recalculate houses relative to Lagna (Whole Sign system)
-    const lagnaSignIndex = lagnaSign.index
-    const planetsWithHouses = planetData.map(p => ({
+    // Keep nodes and Lagna the same (already geocentric)
+    const rahuTrop = calcRahuTropical(T)
+    const ketuTrop = norm360(rahuTrop + 180)
+    const ascTrop  = calcAscendantTropical(jd, latitude, longitude)
+
+    const [sunSid,moonSid,marsSid,mercSid,jupSid,venSid,satSid,rahuSid,ketuSid,ascSid] =
+      [sunTrop,moonTrop,marsTrop,mercTrop,jupTrop,venTrop,satTrop,rahuTrop,ketuTrop,ascTrop]
+        .map(l => sidToSidereal(l, ayanamsa))
+
+    const lagnaSign = getSign(ascSid)
+    const lagnaIdx  = lagnaSign.index
+
+    function house(sid: number) {
+      return ((Math.floor((sid + 0.000001) / 30) - lagnaIdx + 12) % 12) + 1
+    }
+
+    const satRetro  = isRetrograde(satSid,  sunSid, false, [115,245])
+    const jupRetro  = isRetrograde(jupSid,  sunSid, false, [115,245])
+    const marsRetro = isRetrograde(marsSid, sunSid, false, [140,220])
+    const mercElong = norm360(mercSid - sunSid)
+    const mercRetro = mercElong > 332 || mercElong < 28
+    const venElong  = norm360(venSid - sunSid)
+    const venRetro  = venElong > 313 || venElong < 47
+
+    const planets = [
+      { id:0, name:'Sun',     sanskrit:'Surya',   symbol:'☉', longitude:sunSid,  sign:getSign(sunSid),  house:house(sunSid),  isRetrograde:false },
+      { id:1, name:'Moon',    sanskrit:'Chandra',  symbol:'☽', longitude:moonSid, sign:getSign(moonSid), house:house(moonSid), isRetrograde:false },
+      { id:2, name:'Mars',    sanskrit:'Mangal',   symbol:'♂', longitude:marsSid, sign:getSign(marsSid), house:house(marsSid), isRetrograde:marsRetro },
+      { id:3, name:'Mercury', sanskrit:'Budha',    symbol:'☿', longitude:mercSid, sign:getSign(mercSid), house:house(mercSid), isRetrograde:mercRetro },
+      { id:4, name:'Jupiter', sanskrit:'Guru',     symbol:'♃', longitude:jupSid,  sign:getSign(jupSid),  house:house(jupSid),  isRetrograde:jupRetro },
+      { id:5, name:'Venus',   sanskrit:'Shukra',   symbol:'♀', longitude:venSid,  sign:getSign(venSid),  house:house(venSid),  isRetrograde:venRetro },
+      { id:6, name:'Saturn',  sanskrit:'Shani',    symbol:'♄', longitude:satSid,  sign:getSign(satSid),  house:house(satSid),  isRetrograde:satRetro },
+      { id:7, name:'Rahu',    sanskrit:'Rahu',     symbol:'☊', longitude:rahuSid, sign:getSign(rahuSid), house:house(rahuSid), isRetrograde:true },
+      { id:8, name:'Ketu',    sanskrit:'Ketu',     symbol:'☋', longitude:ketuSid, sign:getSign(ketuSid), house:house(ketuSid), isRetrograde:true },
+    ].map(p => ({
       ...p,
-      house: ((p.sign_index - lagnaSignIndex + 12) % 12) + 1
+      longitude:   parseFloat(p.longitude.toFixed(4)),
+      sign:        p.sign.name,
+      sign_sanskrit: p.sign.sanskrit,
+      sign_index:  p.sign.index,
+      degree:      parseFloat(p.sign.degree.toFixed(2)),
     }))
 
-    // Moon data for Nakshatra + Dasha
-    const moon = planetsWithHouses.find(p => p.name === 'Moon')!
-    const moonNakshatra = getNakshatra(moon.longitude)
-    const dashas = calcVimshottariDasha(moon.longitude, birthDateUTC)
-    const currentDasha = dashas[0]
-
-    // Build the 12 houses
     const houses = Array.from({ length: 12 }, (_, i) => {
-      const houseSignIdx = (lagnaSignIndex + i) % 12
-      const planetsInHouse = planetsWithHouses.filter(p => p.house === i + 1)
+      const hIdx = (lagnaIdx + i) % 12
       return {
         number: i + 1,
-        sign: SIGNS[houseSignIdx],
-        sign_sanskrit: SIGN_SANSKRIT[houseSignIdx],
-        sign_index: houseSignIdx,
-        planets: planetsInHouse.map(p => p.name)
+        sign: SIGNS[hIdx], sign_sanskrit: SIGN_SANSKRIT[hIdx], sign_index: hIdx,
+        planets: planets.filter(p => p.house === i+1).map(p => p.name)
       }
     })
+
+    const moonPlanet = planets.find(p => p.name === 'Moon')!
+    const moonNak    = getNakshatra(moonSid)
+    const dashas     = calcDasha(moonSid, new Date(`${date_of_birth}T${String(Math.floor(hourUT)).padStart(2,'0')}:${String(Math.round((hourUT%1)*60)).padStart(2,'0')}:00Z`))
+    const currentDasha = dashas.find(d => d.isCurrent) ?? dashas[0]
 
     const chartData = {
       calculated_at: new Date().toISOString(),
       birth: { date: date_of_birth, time: time_of_birth, latitude, longitude, timezone },
-      ayanamsa: parseFloat(ayanamsa.toFixed(4)),
+      ayanamsa:   parseFloat(ayanamsa.toFixed(4)),
       julian_day: parseFloat(jd.toFixed(4)),
       lagna: {
-        longitude: parseFloat(siderealAsc.toFixed(4)),
-        sign: lagnaSign.name,
+        longitude:     parseFloat(ascSid.toFixed(4)),
+        sign:          lagnaSign.name,
         sign_sanskrit: lagnaSign.sanskrit,
-        sign_index: lagnaSignIndex,
-        degree: parseFloat((siderealAsc % 30).toFixed(2))
+        sign_index:    lagnaIdx,
+        degree:        parseFloat(lagnaSign.degree.toFixed(2))
       },
-      planets: planetsWithHouses,
+      planets,
       houses,
-      moon_nakshatra: moonNakshatra,
+      moon_nakshatra:    moonNak,
       vimshottari_dasha: dashas,
-      current_dasha: currentDasha,
-      // Key yogas (basic)
+      current_dasha:     currentDasha,
       summary: {
-        lagna_sign: lagnaSign.name,
-        moon_sign: moon.sign,
-        sun_sign: planetsWithHouses.find(p => p.name === 'Sun')!.sign,
-        moon_nakshatra: moonNakshatra.name,
+        lagna_sign:         lagnaSign.name,
+        moon_sign:          moonPlanet.sign,
+        sun_sign:           planets.find(p => p.name==='Sun')!.sign,
+        moon_nakshatra:     moonNak.name,
         current_dasha_lord: currentDasha.lord,
         current_dasha_ends: currentDasha.end
       }
     }
 
-    // Save to Supabase
-    const { data: saved, error: saveError } = await supabase
+    const { error: saveError } = await supabase
       .from('kundali_charts')
       .upsert({ user_id: user.id, chart_data: chartData })
-      .select()
-      .single()
-
+      .select().single()
     if (saveError) throw saveError
 
     return NextResponse.json({ success: true, chart: chartData })
 
   } catch (err: unknown) {
-    console.error('Kundali calculation error:', err)
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Calculation failed' },
-      { status: 500 }
-    )
+    console.error('Kundali error:', err)
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Calculation failed' }, { status: 500 })
   }
 }
 
+// ── GET — fetch cached chart ──────────────────────────────────────────────────
 export async function GET() {
   try {
     const supabase = await createClient()
@@ -315,13 +303,11 @@ export async function GET() {
       .select('chart_data, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
+      .limit(1).single()
 
     if (error && error.code !== 'PGRST116') throw error
-    return NextResponse.json({ chart: data?.chart_data || null })
-
-  } catch (err) {
+    return NextResponse.json({ chart: data?.chart_data ?? null })
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch chart' }, { status: 500 })
   }
 }

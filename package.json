@@ -9,12 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fusionstrings/panchangam": "^0.2.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
+    "astronomy-engine": "^2.1.19",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "sweph": "^2.10.3-5",
     "swisseph-wasm": "^0.0.5"
   },
   "devDependencies": {
