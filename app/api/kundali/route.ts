@@ -1,3 +1,4 @@
+// app/api/kundali/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import * as Astronomy from 'astronomy-engine'
@@ -86,6 +87,30 @@ function getNakshatra(lon: number) {
   return { index: idx, name: NAKSHATRAS[idx], pada, lord: NAKSHATRA_LORD[idx] }
 }
 
+function calcAntardasha(mdLord: string, mdStart: string) {
+  const mdYears   = DASHA_YEARS[mdLord]
+  const startIdx  = DASHA_LORDS.indexOf(mdLord)
+  const MS_PER_YEAR = 365.25 * 24 * 3600 * 1000
+  const now = new Date()
+  let cur = new Date(mdStart + 'T00:00:00Z').getTime()
+
+  return Array.from({ length: 9 }, (_, i) => {
+    const adLord      = DASHA_LORDS[(startIdx + i) % 9]
+    const adYears     = (DASHA_YEARS[adLord] * mdYears) / 120
+    const durationMs  = adYears * MS_PER_YEAR
+    const end         = cur + durationMs
+    const entry = {
+      lord:      adLord,
+      years:     parseFloat(adYears.toFixed(3)),
+      start:     new Date(cur).toISOString().split('T')[0],
+      end:       new Date(end).toISOString().split('T')[0],
+      isCurrent: now.getTime() >= cur && now.getTime() < end,
+    }
+    cur = end
+    return entry
+  })
+}
+
 // ── Vimshottari Dasha ────────────────────
 function calcDasha(moonSid: number, birthDateUTC: Date) {
   const nak = getNakshatra(moonSid)
@@ -126,6 +151,9 @@ function calcDasha(moonSid: number, birthDateUTC: Date) {
     })
     cur = end
   }
+  dashas.forEach(d => {
+    d.antardashas = calcAntardasha(d.lord, d.start)
+  })
 
   return dashas
 }
@@ -249,6 +277,8 @@ export async function POST(request: Request) {
     const moonNak    = getNakshatra(moonSid)
     const dashas     = calcDasha(moonSid, new Date(`${date_of_birth}T${String(Math.floor(hourUT)).padStart(2,'0')}:${String(Math.round((hourUT%1)*60)).padStart(2,'0')}:00Z`))
     const currentDasha = dashas.find(d => d.isCurrent) ?? dashas[0]
+    const currentAntardasha = currentDasha.antardashas?.find((ad: any) => ad.isCurrent)
+                         ?? currentDasha.antardashas?.[0]
 
     const chartData = {
       calculated_at: new Date().toISOString(),
@@ -273,7 +303,9 @@ export async function POST(request: Request) {
         sun_sign:           planets.find(p => p.name==='Sun')!.sign,
         moon_nakshatra:     moonNak.name,
         current_dasha_lord: currentDasha.lord,
-        current_dasha_ends: currentDasha.end
+        current_dasha_ends: currentDasha.end,
+        current_antardasha_lord: currentAntardasha?.lord ?? null,
+        current_antardasha_ends: currentAntardasha?.end  ?? null,
       }
     }
 

@@ -1,3 +1,4 @@
+// app/(dashboard)/kundali/page.tsx
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/app/lib/supabase/client'
@@ -408,24 +409,159 @@ export default function KundaliPage() {
 
         {chart?.vimshottari_dasha && (
           <div className="card" style={{ padding: '24px', marginBottom: 20 }}>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>Vimshottari Dasha</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <p style={{
+              fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em',
+              textTransform: 'uppercase', marginBottom: 16
+            }}>Vimshottari Dasha</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {chart.vimshottari_dasha.slice(0, 6).map((d: any) => {
                 const isCur = d.isCurrent
+                const curAD = d.antardashas?.find((ad: any) => ad.isCurrent)
+
                 return (
-                  <div key={d.lord + d.start} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10, background: isCur ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${isCur ? 'rgba(249,115,22,0.22)' : 'rgba(255,255,255,0.05)'}` }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: isCur ? 'var(--orange)' : 'rgba(255,255,255,0.12)' }} />
-                    <span style={{ fontSize: 13, color: isCur ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: isCur ? 500 : 400, flex: 1 }}>
-                      {d.lord} Dasha
-                      {isCur && <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 8 }}>← current</span>}
-                    </span>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                      {d.start?.slice(0, 7)} – {d.end?.slice(0, 7)}
-                    </span>
+                  <div key={d.lord + d.start}>
+
+                    {/* ── Mahadasha row ──────────────────────────────────── */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 14px', borderRadius: isCur ? '10px 10px 0 0' : 10,
+                      background: isCur ? 'rgba(249,115,22,0.1)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${isCur ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.05)'}`,
+                      borderBottom: isCur ? 'none' : undefined,
+                    }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                        background: isCur ? 'var(--orange)' : 'rgba(255,255,255,0.12)'
+                      }} />
+                      <span style={{
+                        flex: 1, fontSize: 13, fontWeight: isCur ? 500 : 400,
+                        color: isCur ? 'var(--text-primary)' : 'var(--text-muted)'
+                      }}>
+                        {d.lord} Mahadasha
+                        {isCur && (
+                          <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 8 }}>
+                            ← current
+                          </span>
+                        )}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
+                        {d.start?.slice(0, 7)} – {d.end?.slice(0, 7)}
+                      </span>
+                    </div>
+
+                    {/* ── Antardasha rows — only for current mahadasha ───── */}
+                    {isCur && d.antardashas?.length > 0 && (
+                      <div style={{
+                        padding: '8px 10px 10px',
+                        background: 'rgba(249,115,22,0.04)',
+                        border: '1px solid rgba(249,115,22,0.15)',
+                        borderTop: 'none', borderRadius: '0 0 10px 10px',
+                        display: 'flex', flexDirection: 'column', gap: 3
+                      }}>
+                        {/* Column headers */}
+                        <div style={{
+                          display: 'flex', alignItems: 'center',
+                          padding: '2px 8px 6px', gap: 8
+                        }}>
+                          <div style={{ width: 5, flexShrink: 0 }} />
+                          <span style={{
+                            flex: 1, fontSize: 10, color: 'var(--text-muted)',
+                            textTransform: 'uppercase', letterSpacing: '0.08em'
+                          }}>
+                            Sub-period (Antardasha)
+                          </span>
+                          <span style={{
+                            fontSize: 10, color: 'var(--text-muted)',
+                            textTransform: 'uppercase', letterSpacing: '0.08em',
+                            flexShrink: 0
+                          }}>
+                            Duration
+                          </span>
+                        </div>
+
+                        {d.antardashas.map((ad: any) => {
+                          const isAdCur  = ad.isCurrent
+                          const isPast   = new Date(ad.end) < new Date()
+                          return (
+                            <div key={ad.lord + ad.start} style={{
+                              display: 'flex', alignItems: 'center', gap: 8,
+                              padding: '7px 8px', borderRadius: 7,
+                              background: isAdCur
+                                ? 'rgba(249,115,22,0.12)'
+                                : 'transparent',
+                              border: isAdCur
+                                ? '1px solid rgba(249,115,22,0.2)'
+                                : '1px solid transparent',
+                            }}>
+                              {/* Status dot */}
+                              <div style={{
+                                width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+                                background: isAdCur
+                                  ? 'var(--orange)'
+                                  : isPast
+                                  ? 'rgba(255,255,255,0.2)'
+                                  : 'rgba(255,255,255,0.08)'
+                              }} />
+
+                              {/* Label */}
+                              <span style={{
+                                flex: 1, fontSize: 12,
+                                color: isAdCur
+                                  ? '#FDBA74'
+                                  : isPast
+                                  ? 'rgba(255,255,255,0.3)'
+                                  : 'var(--text-secondary)',
+                                fontWeight: isAdCur ? 500 : 400
+                              }}>
+                                {d.lord}/{ad.lord}
+                                {isAdCur && (
+                                  <span style={{
+                                    fontSize: 10, color: 'var(--orange)',
+                                    marginLeft: 6, opacity: 0.8
+                                  }}>
+                                    now
+                                  </span>
+                                )}
+                              </span>
+
+                              {/* Date range */}
+                              <span style={{
+                                fontSize: 11, flexShrink: 0,
+                                color: isAdCur
+                                  ? 'rgba(253,186,116,0.7)'
+                                  : 'rgba(255,255,255,0.2)'
+                              }}>
+                                {ad.start?.slice(0, 7)} – {ad.end?.slice(0, 7)}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 )
               })}
             </div>
+
+            {/* Summary pill */}
+            {chart.summary?.current_antardasha_lord && (
+              <div style={{
+                marginTop: 14, padding: '8px 14px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6
+              }}>
+                Currently in{' '}
+                <span style={{ color: '#FDBA74' }}>
+                  {chart.summary.current_dasha_lord}/{chart.summary.current_antardasha_lord} Antardasha
+                </span>
+                {' '}ending{' '}
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  {chart.summary.current_antardasha_ends?.slice(0, 7)}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
