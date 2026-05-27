@@ -199,9 +199,13 @@ export async function POST(request: Request) {
     const T  = (jd - 2451545.0) / 36525.0
     const ayanamsa = getLahiriAyanamsa(T)
 
-    // Set up Astronomy Engine Date (UTC)
-    const dateUTC = new Date(Date.UTC(year, month - 1, day, Math.floor(hourUT), Math.round((hourUT % 1) * 60)))
-    const astroTime = new Astronomy.AstroTime(dateUTC)
+    // Safely calculate absolute UTC time using milliseconds (prevents negative hour bugs)
+    const localMs = Date.UTC(year, month - 1, day, hour, minute)
+    const offsetMs = utcOffset * 60 * 60 * 1000
+    const dateUTC = new Date(localMs - offsetMs)
+
+// Set up Astronomy Engine Date (UTC)
+const astroTime = new Astronomy.AstroTime(dateUTC)
 
     // ✅ FIX: Use .elon (ecliptic longitude) instead of .lon
     const getGeocentricLon = (body: string) => {
@@ -275,7 +279,7 @@ export async function POST(request: Request) {
 
     const moonPlanet = planets.find(p => p.name === 'Moon')!
     const moonNak    = getNakshatra(moonSid)
-    const dashas     = calcDasha(moonSid, new Date(`${date_of_birth}T${String(Math.floor(hourUT)).padStart(2,'0')}:${String(Math.round((hourUT%1)*60)).padStart(2,'0')}:00Z`))
+    const dashas     = calcDasha(moonSid, dateUTC)
     const currentDasha = dashas.find(d => d.isCurrent) ?? dashas[0]
     const currentAntardasha = currentDasha.antardashas?.find((ad: any) => ad.isCurrent)
                          ?? currentDasha.antardashas?.[0]

@@ -14,6 +14,30 @@ type Profile = {
   timezone: string | null
 }
 
+// Helper function to safely parse AM/PM time strings into 24h HTML format
+function formatTimeForInput(timeStr: string | null | undefined): string {
+  if (!timeStr) return '';
+  
+  // If it's already in a valid 24h format (HH:mm or HH:mm:ss), return just HH:mm
+  if (/^\d{2}:\d{2}/.test(timeStr)) {
+    return timeStr.substring(0, 5);
+  }
+
+  // Handle formats like "4:00 AM" or "4:00 PM"
+  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (match) {
+    let [_, hours, minutes, modifier] = match;
+    let hrs = parseInt(hours, 10);
+    
+    if (modifier.toUpperCase() === 'PM' && hrs < 12) hrs += 12;
+    if (modifier.toUpperCase() === 'AM' && hrs === 12) hrs = 0;
+    
+    return `${hrs.toString().padStart(2, '0')}:${minutes}`;
+  }
+  
+  return timeStr;
+}
+
 export default function ProfileForm({ profile, userId }: { profile: Profile | null, userId: string }) {
   const router = useRouter()
   const supabase = createClient()
@@ -24,7 +48,8 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
 
   const [fullName, setFullName] = useState(profile?.full_name || '')
   const [dob, setDob] = useState(profile?.date_of_birth || '')
-  const [tob, setTob] = useState(profile?.time_of_birth || '')
+  // Apply the helper function here
+  const [tob, setTob] = useState(formatTimeForInput(profile?.time_of_birth))
   const [pob, setPob] = useState(profile?.place_of_birth || '')
   const [gender, setGender] = useState(profile?.gender || '')
 
