@@ -1,11 +1,14 @@
 'use client'
 import Link from 'next/link'
-import { Star, MessageCircle, User, ChevronRight } from 'lucide-react'
+import { Star, MessageCircle, User, ChevronRight, Sun, Globe, Heart } from 'lucide-react'
 
 const icons = {
   star: <Star size={20} color="var(--orange)" strokeWidth={1.5} />,
   message: <MessageCircle size={20} color="var(--orange)" strokeWidth={1.5} />,
   user: <User size={20} color="var(--orange)" strokeWidth={1.5} />,
+  sun: <Sun size={20} color="var(--orange)" strokeWidth={1.5} />,
+  globe: <Globe size={20} color="var(--orange)" strokeWidth={1.5} />,
+  heart: <Heart size={20} color="var(--orange)" strokeWidth={1.5} />,
 }
 
 type Props = {
@@ -13,7 +16,7 @@ type Props = {
   title: string
   desc: string
   tag: string
-  iconName: 'star' | 'message' | 'user'
+  iconName: 'star' | 'message' | 'user' | 'sun' | 'globe' | 'heart'
 }
 
 export default function ActionCard({ href, title, desc, tag, iconName }: Props) {

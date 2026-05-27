@@ -96,7 +96,10 @@ export default async function DashboardPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <ActionCard href="/kundali" tag="Chart" title="View Kundali Chart" desc="Lagna chart, planetary positions, and all 12 houses" iconName="star" />
           <ActionCard href="/chat" tag="AI" title="Ask the Astrologer" desc="Career, relationships, health, destiny — ask anything" iconName="message" />
+          <ActionCard href="/panchang" tag="Today"    title="Daily Panchang"        desc="Tithi, nakshatra, muhurta & auspicious timings for today" iconName="sun" />
+          <ActionCard href="/transits" tag="Live" title="Planetary Transits" desc="Today's planets over your natal chart — active aspects & house positions" iconName="globe" />
           <ActionCard href="/profile" tag="Profile" title="Edit Profile" desc="Update your birth details or personal information" iconName="user" />
+          <ActionCard href="/milan" tag="Gunn" title="Kundali Matching" desc="Add you details and your partner's details" iconName="heart" />
         </div>
 
         {/* Divider */}
