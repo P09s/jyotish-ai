@@ -117,7 +117,12 @@ body::before {
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
   letter-spacing: 0.01em;
 }
 
@@ -144,7 +149,12 @@ body::before {
   border-radius: 10px;
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .btn-ghost:hover {
@@ -165,7 +175,12 @@ body::before {
   font-size: 15px;
   font-weight: 300;
   outline: none;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
   -webkit-appearance: none;
 }
 
@@ -245,7 +260,12 @@ body::before {
   font-weight: 400;
   text-decoration: none;
   border: 1px solid transparent;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .nav-link:hover {
@@ -304,4 +324,113 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: #FAFAF9 !important;
   caret-color: #FAFAF9;
   transition: background-color 9999s ease-in-out 0s;
+}
+
+/* ─────────────────────────────
+   Performance + Motion helpers
+───────────────────────────── */
+
+/* Hardware acceleration */
+.gpu {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Smooth animation rendering */
+.smooth-render {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Motion utility classes */
+.fade-in {
+  animation: fadeIn 0.35s ease forwards;
+}
+
+.fade-up {
+  animation: fadeUp 0.4s ease forwards;
+}
+
+.scale-in {
+  animation: scaleIn 0.35s ease forwards;
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Better image + motion performance */
+img,
+svg,
+video,
+canvas {
+  transform: translateZ(0);
+}
+
+/* Improve scrolling smoothness */
+html,
+body {
+  overscroll-behavior-y: none;
+  scroll-behavior: smooth;
+}
+
+/* Reduce repaint cost */
+.card,
+.card-orange,
+.action-card,
+.btn-primary,
+.btn-ghost {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .stars::before,
+  .stars::after {
+    animation: none !important;
+  }
 }

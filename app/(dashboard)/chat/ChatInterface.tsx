@@ -5,6 +5,7 @@ import { Send, Loader2, Sun } from 'lucide-react'
 import { createClient } from '@/app/lib/supabase/client'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { MotionDiv } from '@/app/components/motion-wrapper'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
@@ -191,7 +192,12 @@ export default function ChatInterface({
   }, [sessionId, userId])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end'
+      })
+    })
   }, [messages, loading])
 
   useEffect(() => {
@@ -384,6 +390,7 @@ export default function ChatInterface({
       <div style={{
         flex: 1,
         overflowY: 'auto',
+        scrollBehavior: 'smooth',
         padding: '48px 20px 20px'
       }}>
 
@@ -509,9 +516,21 @@ export default function ChatInterface({
 
             return (
 
-              <div
-                key={i}
-                style={{
+              <MotionDiv
+                  key={i}
+                  initial={{
+                    opacity: 0,
+                    y: 6,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                  }}
+                  transition={{
+                    duration: 0.18,
+                    ease: 'easeOut',
+                  }}
+                  style={{
                   display: 'flex',
                   marginBottom: 16,
                   justifyContent: m.role === 'user'
@@ -548,7 +567,11 @@ export default function ChatInterface({
 
                 <div style={{
                   maxWidth: '76%',
+                  willChange: 'transform, opacity',
+                  transform: 'translateZ(0)',
                   padding: '11px 15px',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
                   borderRadius: m.role === 'user'
                     ? '16px 16px 4px 16px'
                     : '4px 16px 16px 16px',
@@ -589,13 +612,13 @@ export default function ChatInterface({
                       borderRadius: '50%',
                       background: 'var(--orange)',
                       marginTop: 6,
-                      animation: 'blink 0.8s step-end infinite'
+                      animation: 'blink 1s ease-in-out infinite'
                     }} />
                   )}
 
                 </div>
 
-              </div>
+              </MotionDiv>
             )
           })}
 
@@ -632,7 +655,9 @@ export default function ChatInterface({
               <div style={{
                 padding: '12px 16px',
                 borderRadius: '4px 16px 16px 16px',
-                background: 'rgba(255,255,255,0.04)',
+                background: 'rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 border: '1px solid rgba(255,255,255,0.07)',
                 display: 'flex',
                 gap: 5,
@@ -648,7 +673,8 @@ export default function ChatInterface({
                       borderRadius: '50%',
                       background: 'var(--orange)',
                       opacity: 0.7,
-                      animation: 'bounce 1.2s ease-in-out infinite',
+                      animation: 'bounce 1.4s ease-in-out infinite',
+                      transform: 'translateZ(0)',
                       animationDelay: `${i * 0.2}s`
                     }}
                   />

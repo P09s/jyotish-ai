@@ -4,6 +4,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/app/lib/supabase/client'
 import { Sun, Mail, Lock, User, MapPin, ChevronRight } from 'lucide-react'
+import { motion } from 'framer-motion'
+import {
+  MotionDiv,
+  PageTransition,
+} from '@/app/components/motion-wrapper'
 
 type Step = 'account' | 'birth'
 
@@ -55,7 +60,8 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-5 py-12">
+    <PageTransition>
+      <div className="relative min-h-screen flex items-center justify-center px-5 py-12">
       <div className="stars" />
 
       {/* Back to home */}
@@ -102,18 +108,58 @@ export default function SignupPage() {
 
         {/* Progress bars */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 28 }}>
-          <div style={{ flex: 1, height: 2, borderRadius: 2, background: 'var(--orange)' }} />
-          <div style={{
-            flex: 1, height: 2, borderRadius: 2,
-            background: step === 'birth' ? 'var(--orange)' : 'rgba(255,255,255,0.08)',
-            transition: 'background 0.4s'
-          }} />
+          <motion.div
+            initial={{ opacity: 0.7 }}
+            animate={{
+              opacity: 1,
+            }}
+            style={{
+              flex: 1,
+              height: 2,
+              borderRadius: 2,
+              background: 'var(--orange)',
+            }}
+          />
+
+          <motion.div
+            animate={{
+              backgroundColor:
+                step === 'birth'
+                  ? 'rgb(249,115,22)'
+                  : 'rgba(255,255,255,0.08)',
+              scaleX: step === 'birth' ? 1 : 0.92,
+              opacity: step === 'birth' ? 1 : 0.7,
+            }}
+            transition={{
+              duration: 0.35,
+              ease: 'easeOut',
+            }}
+            style={{
+              flex: 1,
+              height: 2,
+              borderRadius: 2,
+              transformOrigin: 'left',
+            }}
+          />
         </div>
 
         <div className="card" style={{ padding: '28px' }}>
           {error && <div className="banner-error" style={{ marginBottom: 20 }}>{error}</div>}
 
           {step === 'account' ? (
+            <MotionDiv
+            initial={{
+              opacity: 0,
+              x: 8,
+            }}
+            animate={{
+              opacity: 1,
+              x: 0,
+            }}
+            transition={{
+              duration: 0.22,
+            }}
+            >
             <form onSubmit={handleAccountStep}>
               <div style={{ marginBottom: 16 }}>
                 <label className="field-label">Email address</label>
@@ -152,7 +198,21 @@ export default function SignupPage() {
                 </span>
               </button>
             </form>
+            </MotionDiv>
           ) : (
+            <MotionDiv
+              initial={{
+                opacity: 0,
+                x: 8,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
+              transition={{
+                duration: 0.22,
+              }}
+            >
             <form onSubmit={handleSignup}>
               {/* Full name */}
               <div style={{ marginBottom: 16 }}>
@@ -237,6 +297,7 @@ export default function SignupPage() {
                 </button>
               </div>
             </form>
+            </MotionDiv>
           )}
         </div>
 
@@ -248,5 +309,6 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+    </PageTransition>
   )
 }

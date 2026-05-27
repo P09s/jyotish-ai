@@ -3,8 +3,20 @@ import {
   Sparkles, MapPin, Clock, MessageCircle, Star,
   Moon, Sun, TrendingUp, Heart, ChevronRight, Zap
 } from 'lucide-react'
+import { MotionDiv } from '@/app/components/motion-wrapper'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/app/lib/supabase/server'
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    redirect('/dashboard')
+  }
   return (
     <div style={{ minHeight: '100vh', overflowX: 'hidden' }}>
       <div className="stars" />
@@ -31,8 +43,13 @@ export default function Home() {
           </Link>
         </div>
       </nav>
-
+      
       {/* ── Hero ── */}
+      <MotionDiv
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35 }}
+      >
       <section style={{
         minHeight: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
@@ -40,6 +57,14 @@ export default function Home() {
         position: 'relative', zIndex: 1
       }}>
         {/* Eyebrow pill */}
+        <MotionDiv
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.05,
+            duration: 0.3,
+          }}
+        >
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 32,
           padding: '6px 16px', borderRadius: 100,
@@ -50,6 +75,7 @@ export default function Home() {
             Vedic Astrology · AI Powered
           </span>
         </div>
+        </MotionDiv>
 
         {/* Kundali SVG — fixed: transparent fill, visible strokes */}
         <div style={{ position: 'relative', width: 180, height: 180, marginBottom: 40 }}>
@@ -59,8 +85,8 @@ export default function Home() {
                 @keyframes kspin  { to { transform: rotate(360deg);  } }
                 @keyframes krspin { to { transform: rotate(-360deg); } }
                 @keyframes kpulse { 0%,100%{opacity:.5} 50%{opacity:1} }
-                .kr1 { transform-origin:90px 90px; animation: kspin  28s linear infinite; }
-                .kr2 { transform-origin:90px 90px; animation: krspin 18s linear infinite; }
+                .kr1 { transform-origin:90px 90px; animation: kspin  60s linear infinite; }
+                .kr2 { transform-origin:90px 90px; animation: krspin 42s linear infinite; }
                 .kr3 { transform-origin:90px 90px; animation: kspin  44s linear infinite; }
                 .kcore { animation: kpulse 3s ease-in-out infinite; }
               `}</style>
@@ -146,14 +172,32 @@ export default function Home() {
           display: 'flex', gap: 32, marginTop: 52,
           flexWrap: 'wrap', justifyContent: 'center'
         }}>
-          {[['2,400+','Kundalis created'],['9','Planets tracked'],['4.9★','Avg. rating']].map(([n, l]) => (
+          {[['2,400+','Kundalis created'],['9','Planets tracked'],['4.9★','Avg. rating']].map(([n, l], i) => (
+            <MotionDiv
+            key={l}
+            initial={{
+              opacity: 0,
+              y: 8,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            transition={{
+              delay: 0.3 + i * 0.08,
+              duration: 0.25,
+            }}
+            style={{ textAlign: 'center' }}
+            >
             <div key={l} style={{ textAlign: 'center' }}>
               <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: 'var(--orange)' }}>{n}</div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em', marginTop: 2 }}>{l}</div>
             </div>
+            </MotionDiv>
           ))}
         </div>
       </section>
+      </MotionDiv>
 
       {/* ── Curved divider down ── */}
       <div style={{ marginTop: -2, lineHeight: 0, position: 'relative', zIndex: 1 }}>
@@ -164,6 +208,12 @@ export default function Home() {
       </div>
 
       {/* ── How it works — horizontal flow ── */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.45 }}
+      >
       <section style={{ padding: '72px 24px', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--orange)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>How it works</p>
@@ -201,6 +251,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </MotionDiv>
 
       {/* ── Curved divider up ── */}
       <div style={{ lineHeight: 0, position: 'relative', zIndex: 1 }}>
@@ -211,127 +262,468 @@ export default function Home() {
       </div>
 
       {/* ── Bento features grid ── */}
-      <section style={{ padding: '72px 24px', position: 'relative', zIndex: 1 }}>
-        <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--orange)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>What's inside</p>
-          <h2 className="serif" style={{ textAlign: 'center', fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 600, color: 'var(--white)', marginBottom: 40 }}>
+      <MotionDiv
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.45 }}
+      >
+      <section
+        style={{
+          padding: '72px 24px',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 720,
+            margin: '0 auto',
+          }}
+        >
+          <p
+            style={{
+              textAlign: 'center',
+              fontSize: 11,
+              color: 'var(--orange)',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              marginBottom: 10,
+            }}
+          >
+            What's inside
+          </p>
+
+          <h2
+            className="serif"
+            style={{
+              textAlign: 'center',
+              fontSize: 'clamp(26px, 4vw, 38px)',
+              fontWeight: 600,
+              color: 'var(--white)',
+              marginBottom: 40,
+            }}
+          >
             Everything your Kundali holds
           </h2>
 
-          {/* Bento grid — 3 col × 2 row, varying sizes */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'auto auto', gap: 12 }}>
+          {/* GRID */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateRows: 'auto auto',
+              gap: 12,
+            }}
+          >
+            {/* Lagna */}
+            <MotionDiv
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                gridColumn: 'span 2',
+              }}
+            >
+              <div
+                className="card"
+                style={{
+                  padding: '28px 28px',
+                  display: 'flex',
+                  gap: 20,
+                  alignItems: 'flex-start',
+                  height: '100%',
+                }}
+              >
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    flexShrink: 0,
+                    background: 'rgba(249,115,22,0.1)',
+                    border:
+                      '1px solid rgba(249,115,22,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Sun
+                    size={20}
+                    color="var(--orange)"
+                    strokeWidth={1.5}
+                  />
+                </div>
 
-            {/* Large: Lagna Chart — spans 2 cols */}
-            <div className="card" style={{
-              gridColumn: 'span 2', padding: '28px 28px',
-              display: 'flex', gap: 20, alignItems: 'flex-start'
-            }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <Sun size={20} color="var(--orange)" strokeWidth={1.5} />
-              </div>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 6 }}>Lagna Chart</div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.65 }}>
-                  Your rising sign, planetary positions across all 12 houses. The complete picture of who you are and how the world sees you.
+                <div>
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: 'var(--text-primary)',
+                      marginBottom: 6,
+                    }}
+                  >
+                    Lagna Chart
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.65,
+                    }}
+                  >
+                    Your rising sign, planetary
+                    positions across all 12 houses.
+                    The complete picture of who you
+                    are and how the world sees you.
+                  </div>
                 </div>
               </div>
-            </div>
+            </MotionDiv>
 
             {/* Navamsa */}
-            <div className="card" style={{ padding: '24px 20px' }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 10, marginBottom: 16,
-                background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.18)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <Heart size={18} color="var(--orange)" strokeWidth={1.5} />
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 5 }}>Navamsa</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>Marriage & soul purpose chart</div>
-            </div>
-
-            {/* AI Chat — spans 2 rows */}
-            <div className="card" style={{
-              gridRow: 'span 2', padding: '28px 24px',
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
-            }}>
-              <div>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12, marginBottom: 20,
-                  background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <MessageCircle size={20} color="var(--orange)" strokeWidth={1.5} />
+            <MotionDiv
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div
+                className="card"
+                style={{
+                  padding: '24px 20px',
+                  height: '100%',
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    marginBottom: 16,
+                    background: 'rgba(249,115,22,0.08)',
+                    border:
+                      '1px solid rgba(249,115,22,0.18)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Heart
+                    size={18}
+                    color="var(--orange)"
+                    strokeWidth={1.5}
+                  />
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>AI Astrologer</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                  Ask anything in plain language. Career, marriage, health, timing — your personal guide answers with Kundali context.
+
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: 'var(--text-primary)',
+                    marginBottom: 5,
+                  }}
+                >
+                  Navamsa
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Marriage & soul purpose chart
                 </div>
               </div>
-              {/* Mini chat preview */}
-              <div style={{ marginTop: 24 }}>
-                {[
-                  { q: true, t: 'When is a good time to change careers?' },
-                  { q: false, t: 'Saturn enters your 10th house in late 2025...' },
-                ].map(({ q, t }, i) => (
-                  <div key={i} style={{
-                    marginBottom: 8, padding: '8px 12px', borderRadius: 10, fontSize: 11,
-                    background: q ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${q ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.07)'}`,
-                    color: q ? '#FDBA74' : 'var(--text-secondary)',
-                    textAlign: q ? 'right' : 'left', lineHeight: 1.5
-                  }}>{t}</div>
-                ))}
-              </div>
-            </div>
+            </MotionDiv>
 
-            {/* Vimshottari Dasha */}
-            <div className="card" style={{ padding: '24px 20px' }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 10, marginBottom: 16,
-                background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.18)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <TrendingUp size={18} color="var(--orange)" strokeWidth={1.5} />
+            {/* AI Astrologer */}
+            <MotionDiv
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                gridRow: 'span 2',
+              }}
+            >
+              <div
+                className="card"
+                style={{
+                  padding: '28px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  height: '100%',
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      marginBottom: 20,
+                      background: 'rgba(249,115,22,0.1)',
+                      border:
+                        '1px solid rgba(249,115,22,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <MessageCircle
+                      size={20}
+                      color="var(--orange)"
+                      strokeWidth={1.5}
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: 'var(--text-primary)',
+                      marginBottom: 8,
+                    }}
+                  >
+                    AI Astrologer
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    Ask anything in plain language.
+                    Career, marriage, health, timing
+                    — your personal guide answers
+                    with Kundali context.
+                  </div>
+                </div>
+
+                {/* Chat Preview */}
+                <div style={{ marginTop: 24 }}>
+                  {[
+                    {
+                      q: true,
+                      t: 'When is a good time to change careers?',
+                    },
+                    {
+                      q: false,
+                      t: 'Saturn enters your 10th house in late 2025...',
+                    },
+                  ].map(({ q, t }, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        marginBottom: 8,
+                        padding: '8px 12px',
+                        borderRadius: 10,
+                        fontSize: 11,
+                        background: q
+                          ? 'rgba(249,115,22,0.08)'
+                          : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${
+                          q
+                            ? 'rgba(249,115,22,0.15)'
+                            : 'rgba(255,255,255,0.07)'
+                        }`,
+                        color: q
+                          ? '#FDBA74'
+                          : 'var(--text-secondary)',
+                        textAlign: q ? 'right' : 'left',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {t}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 5 }}>Vimshottari Dasha</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>Life timeline & planetary periods</div>
-            </div>
+            </MotionDiv>
+
+            {/* Vimshottari */}
+            <MotionDiv
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div
+                className="card"
+                style={{
+                  padding: '24px 20px',
+                  height: '100%',
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    marginBottom: 16,
+                    background: 'rgba(249,115,22,0.08)',
+                    border:
+                      '1px solid rgba(249,115,22,0.18)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <TrendingUp
+                    size={18}
+                    color="var(--orange)"
+                    strokeWidth={1.5}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: 'var(--text-primary)',
+                    marginBottom: 5,
+                  }}
+                >
+                  Vimshottari Dasha
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Life timeline & planetary periods
+                </div>
+              </div>
+      </MotionDiv>
 
             {/* 9 Grahas */}
-            <div className="card" style={{ padding: '24px 20px' }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 10, marginBottom: 16,
-                background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.18)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <Star size={18} color="var(--orange)" strokeWidth={1.5} />
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 5 }}>9 Grahas</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>All planetary influences mapped</div>
-            </div>
+            <MotionDiv
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div
+                className="card"
+                style={{
+                  padding: '24px 20px',
+                  height: '100%',
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    marginBottom: 16,
+                    background: 'rgba(249,115,22,0.08)',
+                    border:
+                      '1px solid rgba(249,115,22,0.18)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Star
+                    size={18}
+                    color="var(--orange)"
+                    strokeWidth={1.5}
+                  />
+                </div>
 
-            {/* Zap / instant */}
-            <div className="card" style={{ padding: '24px 20px' }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 10, marginBottom: 16,
-                background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.18)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <Zap size={18} color="var(--orange)" strokeWidth={1.5} />
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: 'var(--text-primary)',
+                    marginBottom: 5,
+                  }}
+                >
+                  9 Grahas
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  All planetary influences mapped
+                </div>
               </div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 5 }}>Instant results</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>Chart computed in seconds</div>
-            </div>
+            </MotionDiv>
+
+            {/* Instant */}
+            <MotionDiv
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div
+                className="card"
+                style={{
+                  padding: '24px 20px',
+                  height: '100%',
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    marginBottom: 16,
+                    background: 'rgba(249,115,22,0.08)',
+                    border:
+                      '1px solid rgba(249,115,22,0.18)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Zap
+                    size={18}
+                    color="var(--orange)"
+                    strokeWidth={1.5}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: 'var(--text-primary)',
+                    marginBottom: 5,
+                  }}
+                >
+                  Instant results
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Chart computed in seconds
+                </div>
+              </div>
+            </MotionDiv>
           </div>
         </div>
       </section>
+      </MotionDiv>
 
       {/* ── Final CTA ── */}
+      <MotionDiv
+        initial={{ opacity: 0, scale: 0.98 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.4 }}
+      >
       <section style={{ padding: '60px 24px 100px', position: 'relative', zIndex: 1, textAlign: 'center' }}>
         <div style={{
           maxWidth: 480, margin: '0 auto', padding: '48px 32px',
@@ -365,6 +757,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+      </MotionDiv>
 
       {/* ── Footer ── */}
       <footer style={{

@@ -4,6 +4,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/app/lib/supabase/client'
 import { Sun, Mail, Lock, ChevronRight } from 'lucide-react'
+import { motion } from 'framer-motion'
+import {
+  MotionDiv,
+  PageTransition,
+} from '@/app/components/motion-wrapper'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -22,7 +27,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-5">
+    <PageTransition>
+      <div className="relative min-h-screen flex items-center justify-center px-5">
       <div className="stars" />
 
       {/* Back to home */}
@@ -65,60 +71,87 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="card" style={{ padding: '28px 28px 24px' }}>
-          {error && (
-            <div className="banner-error" style={{ marginBottom: 20 }}>{error}</div>
-          )}
+        <MotionDiv
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            duration: 0.25,
+          }}
+        >
+          <div className="card" style={{ padding: '28px 28px 24px' }}>
+            {error && (
+              <MotionDiv
+              initial={{ x: -6 }}
+              animate={{ x: [6, -4, 3, -2, 0] }}
+              transition={{ duration: 0.32 }}
+              >
+                <div className="banner-error" style={{ marginBottom: 20 }}>{error}</div>
+              </MotionDiv>
+            )}
 
-          <form onSubmit={handleLogin}>
-            {/* Email */}
-            <div style={{ marginBottom: 16 }}>
-              <label className="field-label">Email address</label>
-              <div style={{ position: 'relative' }}>
-                <div style={{
-                  position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-                  display: 'flex', alignItems: 'center', pointerEvents: 'none'
-                }}>
-                  <Mail size={14} color="rgba(250,250,249,0.3)" strokeWidth={1.5} />
+            <form onSubmit={handleLogin}>
+              {/* Email */}
+              <div style={{ marginBottom: 16 }}>
+                <label className="field-label">Email address</label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                    display: 'flex', alignItems: 'center', pointerEvents: 'none'
+                  }}>
+                    <Mail size={14} color="rgba(250,250,249,0.3)" strokeWidth={1.5} />
+                  </div>
+                  <input
+                    type="email" required className="input-field"
+                    placeholder="you@example.com"
+                    style={{ paddingLeft: 38 }}
+                    value={email} onChange={e => setEmail(e.target.value)}
+                  />
                 </div>
-                <input
-                  type="email" required className="input-field"
-                  placeholder="you@example.com"
-                  style={{ paddingLeft: 38 }}
-                  value={email} onChange={e => setEmail(e.target.value)}
-                />
               </div>
-            </div>
 
-            {/* Password */}
-            <div style={{ marginBottom: 24 }}>
-              <label className="field-label">Password</label>
-              <div style={{ position: 'relative' }}>
-                <div style={{
-                  position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-                  display: 'flex', alignItems: 'center', pointerEvents: 'none'
-                }}>
-                  <Lock size={14} color="rgba(250,250,249,0.3)" strokeWidth={1.5} />
+              {/* Password */}
+              <div style={{ marginBottom: 24 }}>
+                <label className="field-label">Password</label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                    display: 'flex', alignItems: 'center', pointerEvents: 'none'
+                  }}>
+                    <Lock size={14} color="rgba(250,250,249,0.3)" strokeWidth={1.5} />
+                  </div>
+                  <input
+                    type="password" required className="input-field"
+                    placeholder="Your password"
+                    style={{ paddingLeft: 38 }}
+                    value={password} onChange={e => setPassword(e.target.value)}
+                  />
                 </div>
-                <input
-                  type="password" required className="input-field"
-                  placeholder="Your password"
-                  style={{ paddingLeft: 38 }}
-                  value={password} onChange={e => setPassword(e.target.value)}
-                />
               </div>
-            </div>
 
-            <button type="submit" className="btn-primary" disabled={loading}
-              style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15 }}>
-              {loading ? 'Signing in...' : (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                  Sign in <ChevronRight size={16} strokeWidth={2} />
-                </span>
-              )}
-            </button>
-          </form>
-        </div>
+              <motion.button
+                whileHover={{
+                  y: -1,
+                }}
+                whileTap={{
+                  scale: 0.99,
+                }}
+                type="submit" className="btn-primary" disabled={loading}
+                style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15 }}>
+                {loading ? 'Signing in...' : (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                    Sign in <ChevronRight size={16} strokeWidth={2} />
+                  </span>
+                )}
+              </motion.button>
+            </form>
+          </div>
+        </MotionDiv>
 
         {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
@@ -135,5 +168,6 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+    </PageTransition>
   )
 }

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { createClient } from '@/app/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Check, Loader2 } from 'lucide-react'
+import { MotionDiv } from '@/app/components/motion-wrapper'
 
 type Profile = {
   full_name: string | null
@@ -105,18 +106,38 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
   return (
     <form onSubmit={handleSave}>
       {error && (
-        <div className="banner-error" style={{ marginBottom: 20 }}>{error}</div>
+        <MotionDiv
+        initial={{ x: -6 }}
+        animate={{ x: [6, -4, 3, -2, 0] }}
+        transition={{ duration: 0.32 }}
+        >
+          <div className="banner-error" style={{ marginBottom: 20 }}>{error}</div>
+        </MotionDiv>
       )}
 
       {saved && !error && (
-        <div style={{
-          padding: '12px 16px', marginBottom: 20, borderRadius: 10,
-          background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
-          color: '#86efac', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8
-        }}>
-          <Check size={14} strokeWidth={2} />
-          Profile saved & Kundali computed successfully
-        </div>
+        <MotionDiv
+        initial={{
+          opacity: 0,
+          scale: 0.96,
+        }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+        }}
+        transition={{
+          duration: 0.22,
+        }}
+        >
+          <div style={{
+            padding: '12px 16px', marginBottom: 20, borderRadius: 10,
+            background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
+            color: '#86efac', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8
+          }}>
+            <Check size={14} strokeWidth={2} />
+            Profile saved & Kundali computed successfully
+          </div>
+        </MotionDiv>
       )}
 
       {/* Loading status pill */}
@@ -132,93 +153,177 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
       )}
 
       {/* Personal section */}
-      <div className="card" style={{ padding: '24px', marginBottom: 16 }}>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
-          Personal
-        </p>
-        <div style={{ marginBottom: 18 }}>
-          <label className="field-label">Full name</label>
-          <input
-            type="text" className="input-field" placeholder="As per birth records"
-            value={fullName} onChange={e => setFullName(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="field-label">
-            Gender <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
-          </label>
-          <select
-            className="input-field" value={gender}
-            onChange={e => setGender(e.target.value)} style={{ appearance: 'none' }}
-          >
-            <option value="">Prefer not to say</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Birth details section */}
-      <div className="card" style={{ padding: '24px', marginBottom: 16 }}>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
-          Birth Details
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-          <div>
-            <label className="field-label">Date of birth</label>
+      <MotionDiv
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+      >
+        <div className="card" style={{ padding: '24px', marginBottom: 16 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
+            Personal
+          </p>
+          <div style={{ marginBottom: 18 }}>
+            <label className="field-label">Full name</label>
             <input
-              type="date" className="input-field"
-              value={dob} onChange={e => setDob(e.target.value)}
+              type="text" className="input-field" placeholder="As per birth records"
+              style={{
+                transition:
+                  'border-color 0.2s ease, transform 0.2s ease',
+                willChange: 'transform',
+                transform: 'translateZ(0)',
+              }}
+              onFocus={e => {
+                e.target.style.transform = 'translateY(-1px)'
+              }}
+              onBlur={e => {
+                e.target.style.transform = 'translateY(0)'
+              }}
+              value={fullName} onChange={e => setFullName(e.target.value)}
             />
           </div>
           <div>
             <label className="field-label">
-              Time <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
+              Gender <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
             </label>
-            <input
-              type="time" className="input-field"
-              value={tob} onChange={e => setTob(e.target.value)}
-            />
+            <select
+              className="input-field" value={gender}
+              onChange={e => setGender(e.target.value)} style={{
+                appearance: 'none',
+                transition:
+                  'border-color 0.2s ease, transform 0.2s ease',
+                willChange: 'transform',
+                transform: 'translateZ(0)',
+              }}
+              onFocus={e => {
+                e.target.style.transform = 'translateY(-1px)'
+              }}
+              onBlur={e => {
+                e.target.style.transform = 'translateY(0)'
+              }}
+            >
+              <option value="">Prefer not to say</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
           </div>
         </div>
-        <div>
-          <label className="field-label">Place of birth</label>
-          <input
-            type="text" className="input-field"
-            placeholder="City, State, Country e.g. Mumbai, Maharashtra, India"
-            value={pob} onChange={e => setPob(e.target.value)}
-          />
-        </div>
+      </MotionDiv>
 
-        {/* Info note */}
-        <div style={{
-          marginTop: 14, padding: '10px 14px', borderRadius: 10,
-          background: 'rgba(249,115,22,0.04)', border: '1px solid rgba(249,115,22,0.1)'
-        }}>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.65, margin: 0 }}>
-            ☉ Time of birth determines your Ascendant (Lagna). Even a 10-minute difference can change your rising sign. Your birth place is geocoded to precise coordinates for accurate calculations.
-          </p>
-        </div>
-      </div>
-
-      <button
-        type="submit" className="btn-primary" disabled={loading}
-        style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15 }}
+      {/* Birth details section */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          delay: 0.08,
+          duration: 0.28,
+        }}
       >
-        {loading ? (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-            <Loader2 size={15} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
-            {status || 'Saving...'}
-          </span>
-        ) : saved ? (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-            <Check size={15} strokeWidth={2} /> Saved
-          </span>
-        ) : (
-          'Save & compute Kundali'
-        )}
-      </button>
+        <div className="card" style={{ padding: '24px', marginBottom: 16 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
+            Birth Details
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+            <div>
+              <label className="field-label">Date of birth</label>
+              <input
+                type="date" className="input-field" 
+                style={{
+                  transition:
+                    'border-color 0.2s ease, transform 0.2s ease',
+                  willChange: 'transform',
+                  transform: 'translateZ(0)',
+                }}
+                onFocus={e => {
+                  e.target.style.transform = 'translateY(-1px)'
+                }}
+                onBlur={e => {
+                  e.target.style.transform = 'translateY(0)'
+                }}
+                value={dob} onChange={e => setDob(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="field-label">
+                Time <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
+              </label>
+              <input
+                type="time" className="input-field"
+                style={{
+                  transition:
+                    'border-color 0.2s ease, transform 0.2s ease',
+                  willChange: 'transform',
+                  transform: 'translateZ(0)',
+                }}
+                onFocus={e => {
+                  e.target.style.transform = 'translateY(-1px)'
+                }}
+                onBlur={e => {
+                  e.target.style.transform = 'translateY(0)'
+                }}
+                value={tob} onChange={e => setTob(e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="field-label">Place of birth</label>
+            <input
+              type="text" className="input-field"
+              style={{
+                transition:
+                  'border-color 0.2s ease, transform 0.2s ease',
+                willChange: 'transform',
+                transform: 'translateZ(0)',
+              }}
+              onFocus={e => {
+                e.target.style.transform = 'translateY(-1px)'
+              }}
+              onBlur={e => {
+                e.target.style.transform = 'translateY(0)'
+              }}
+              placeholder="City, State, Country e.g. Mumbai, Maharashtra, India"
+              value={pob} onChange={e => setPob(e.target.value)}
+            />
+          </div>
+
+          {/* Info note */}
+          <div style={{
+            marginTop: 14, padding: '10px 14px', borderRadius: 10,
+            background: 'rgba(249,115,22,0.04)', border: '1px solid rgba(249,115,22,0.1)'
+          }}>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.65, margin: 0 }}>
+              ☉ Time of birth determines your Ascendant (Lagna). Even a 10-minute difference can change your rising sign. Your birth place is geocoded to precise coordinates for accurate calculations.
+            </p>
+          </div>
+        </div>
+      </MotionDiv>
+
+      <MotionDiv
+        whileHover={{
+          y: -1,
+        }}
+        whileTap={{
+          scale: 0.99,
+        }}
+      >
+        <button
+          type="submit" className="btn-primary" disabled={loading}
+          style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15 }}
+        >
+          {loading ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+              <Loader2 size={15} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
+              {status || 'Saving...'}
+            </span>
+          ) : saved ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+              <Check size={15} strokeWidth={2} /> Saved
+            </span>
+          ) : (
+            'Save & compute Kundali'
+          )}
+        </button>
+      </MotionDiv>
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </form>

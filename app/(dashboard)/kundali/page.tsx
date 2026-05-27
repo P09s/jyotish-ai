@@ -5,6 +5,8 @@ import { createClient } from '@/app/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Sun, ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react'
+import { MotionDiv } from '@/app/components/motion-wrapper'
+import { motion } from 'framer-motion'
 
 const PLANETS_ORDER = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu']
 const SYMBOLS: Record<string, string> = {
@@ -111,7 +113,11 @@ function NorthIndianChart({ chart }: { chart: any }) {
   }
 
   return (
-    <svg viewBox="0 0 700 560" width="100%" style={{ maxWidth: 580, display: 'block' }}>
+    <motion.svg
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      viewBox="0 0 700 560" width="100%" style={{ maxWidth: 580, display: 'block' }}>
       <rect x="30" y="30" width="640" height="500" rx="3" fill="rgba(249,115,22,0.015)" stroke="rgba(249,115,22,0.42)" strokeWidth="1.6" />
       <line x1="30"  y1="30"  x2="670" y2="530" stroke={grid} strokeWidth={gw} />
       <line x1="670" y1="30"  x2="30"  y2="530" stroke={grid} strokeWidth={gw} />
@@ -195,7 +201,7 @@ function NorthIndianChart({ chart }: { chart: any }) {
           </g>
         )
       })}
-    </svg>
+    </motion.svg>
   )
 }
 
@@ -315,27 +321,33 @@ export default function KundaliPage() {
         )}
 
         {!loading && (
-          <div className="card" style={{ padding: '24px', marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                Lagna Chart (North Indian)
-              </p>
-              {chart?.lagna && (
-                <span style={{ fontSize: 11, color: 'rgba(249,115,22,0.8)', padding: '3px 10px', borderRadius: 100, border: '1px solid rgba(249,115,22,0.2)' }}>
-                  {chart.lagna.sign} Lagna · {Number(chart.lagna.degree).toFixed(1)}°
-                </span>
-              )}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              {chart
-                ? <NorthIndianChart chart={chart} />
-                : (
-                  <div style={{ width: 320, height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <p style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic' }}>Complete profile to generate chart</p>
-                  </div>
+          <MotionDiv
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35 }}
+          >
+            <div className="card" style={{ padding: '24px', marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Lagna Chart (North Indian)
+                </p>
+                {chart?.lagna && (
+                  <span style={{ fontSize: 11, color: 'rgba(249,115,22,0.8)', padding: '3px 10px', borderRadius: 100, border: '1px solid rgba(249,115,22,0.2)' }}>
+                    {chart.lagna.sign} Lagna · {Number(chart.lagna.degree).toFixed(1)}°
+                  </span>
                 )}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                {chart
+                  ? <NorthIndianChart chart={chart} />
+                  : (
+                    <div style={{ width: 320, height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <p style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic' }}>Complete profile to generate chart</p>
+                    </div>
+                  )}
+              </div>
             </div>
-          </div>
+          </MotionDiv>
         )}
 
         {chart?.summary && (
