@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/app/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Sun, ArrowLeft, Heart, Loader2, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Sun, ArrowLeft, Heart, Loader2, AlertTriangle, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
+import { ThemeToggle } from '@/app/components/ThemeProvider'
+import HelpButton from '@/app/components/HelpButton'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Koota {
@@ -19,7 +21,7 @@ interface AshtakootResult {
 // ── Score colour ─────────────────────────────────────────────────────────────
 function scoreColor(pct: number): string {
   if (pct >= 72) return '#4ADE80'
-  if (pct >= 50) return '#FDBA74'
+  if (pct >= 50) return 'var(--orange)'
   return '#F87171'
 }
 function scoreLabel(pct: number): string {
@@ -46,7 +48,7 @@ function KootaRow({ k }: { k: Koota }) {
           {k.score}/{k.max}
         </span>
       </div>
-      <div style={{ height: 4, borderRadius: 4, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+      <div style={{ height: 4, borderRadius: 4, background: 'var(--bg-surface2)', overflow: 'hidden' }}>
         <div style={{
           height: '100%', borderRadius: 4,
           width: `${pct}%`,
@@ -70,7 +72,7 @@ function CompatDial({ percent, color }: { percent: number; color: string }) {
     <svg width={140} height={140} viewBox="0 0 140 140">
       {/* Track */}
       <circle cx={70} cy={70} r={r} fill="none"
-        stroke="rgba(255,255,255,0.07)" strokeWidth={10}
+        stroke="var(--border)" strokeWidth={10}
         strokeDasharray={`${arc} ${circ - arc}`}
         strokeDashoffset={-offset}
         strokeLinecap="round"
@@ -89,16 +91,12 @@ function CompatDial({ percent, color }: { percent: number; color: string }) {
         {percent}%
       </text>
       <text x={70} y={84} textAnchor="middle" dominantBaseline="middle"
-        style={{ fontSize: 10, fill: 'rgba(253,186,116,0.6)', fontFamily: 'sans-serif', letterSpacing: '0.06em' }}>
+        style={{ fontSize: 10, fill: 'var(--orange-dim)', fontFamily: 'sans-serif', letterSpacing: '0.06em' }}>
         {scoreLabel(percent).toUpperCase()}
       </text>
     </svg>
   )
 }
-
-// ── Chart search modal ─────────────────────────────────────────────────────────
-// We let the user paste chart JSON or we query their own chart
-// For MVP: user picks "My chart" or pastes partner details manually
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function MilanPage() {
@@ -209,16 +207,20 @@ export default function MilanPage() {
       <nav style={{
         position: 'sticky', top: 0, zIndex: 50, padding: '0 28px', height: 60,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(12,12,12,0.85)', backdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--bg-nav)', backdropFilter: 'blur(24px)',
+        borderBottom: '1px solid var(--border)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Sun size={16} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--white)' }}>Jyotish AI</span>
+          <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>Daivam</span>
         </div>
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
-          <ArrowLeft size={14} strokeWidth={1.5} /> Dashboard
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <ThemeToggle />
+          <HelpButton page="milan" />
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
+            <ArrowLeft size={14} strokeWidth={1.5} /> Dashboard
+          </Link>
+        </div>
       </nav>
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '44px 24px 80px', position: 'relative', zIndex: 1 }}>
@@ -228,7 +230,7 @@ export default function MilanPage() {
           <p style={{ fontSize: 11, color: 'var(--orange)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
             Compatibility
           </p>
-          <h1 className="serif" style={{ fontSize: 'clamp(28px,4vw,38px)', fontWeight: 600, color: 'var(--white)', marginBottom: 6 }}>
+          <h1 className="serif" style={{ fontSize: 'clamp(28px,4vw,38px)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
             Kundali Milan
           </h1>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
@@ -239,9 +241,9 @@ export default function MilanPage() {
         {/* No chart warning */}
         {!loading && !myChart && (
           <div style={{ padding: '20px 24px', borderRadius: 14, marginBottom: 28, background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-            <AlertTriangle size={18} color="#FDBA74" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
+            <AlertTriangle size={18} color="var(--orange)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
             <div>
-              <p style={{ fontSize: 14, color: '#FDBA74', marginBottom: 6 }}>Your Kundali isn't generated yet</p>
+              <p style={{ fontSize: 14, color: 'var(--orange)', marginBottom: 6 }}>Your Kundali isn't generated yet</p>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 14 }}>
                 Generate your birth chart first to use Kundali Milan.
               </p>
@@ -258,7 +260,7 @@ export default function MilanPage() {
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', flexShrink: 0 }} />
             <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
               Your chart: <strong style={{ color: 'var(--text-primary)' }}>{myProfile?.full_name ?? 'You'}</strong>
-              {' '}· Moon in <strong style={{ color: '#FDBA74' }}>{myChart.summary?.moon_sign}</strong>
+              {' '}· Moon in <strong style={{ color: 'var(--orange)' }}>{myChart.summary?.moon_sign}</strong>
               {' '}· {myChart.moon_nakshatra?.name} Nakshatra
             </span>
           </div>
@@ -362,9 +364,9 @@ export default function MilanPage() {
                       { label: myProfile?.full_name?.split(' ')[0] ?? 'You', sign: result.ashtakoot.moonSignA, nak: result.ashtakoot.nakA },
                       { label: partnerName || 'Partner', sign: result.ashtakoot.moonSignB, nak: result.ashtakoot.nakB },
                     ].map(p => (
-                      <div key={p.label} style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(249,115,22,0.07)', border: '1px solid rgba(249,115,22,0.15)' }}>
+                      <div key={p.label} style={{ padding: '8px 12px', borderRadius: 10, background: 'var(--orange-glow)', border: '1px solid var(--orange-border)' }}>
                         <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>{p.label}</p>
-                        <p style={{ fontSize: 13, color: '#FDBA74' }}>{p.sign} · {p.nak}</p>
+                        <p style={{ fontSize: 13, color: 'var(--orange)' }}>{p.sign} · {p.nak}</p>
                       </div>
                     ))}
                   </div>
@@ -374,7 +376,7 @@ export default function MilanPage() {
 
             {/* AI Narrative */}
             {result.narrative && (
-              <div className="card" style={{ padding: '24px', marginBottom: 20, borderColor: 'rgba(249,115,22,0.2)' }}>
+              <div className="card" style={{ padding: '24px', marginBottom: 20, borderColor: 'var(--orange-border)' }}>
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>
                   Jyotish Reading
                 </p>
@@ -399,7 +401,7 @@ export default function MilanPage() {
             </div>
 
             {/* Recalculate nudge */}
-            <div style={{ padding: '14px 20px', borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', fontSize: 13, color: 'var(--text-muted)' }}>
+            <div style={{ padding: '14px 20px', borderRadius: 12, background: 'var(--bg-surface)', border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-muted)' }}>
               Want a deeper reading?{' '}
               <Link href="/chat" style={{ color: 'var(--orange)', textDecoration: 'none' }}>Ask your AI Astrologer →</Link>
             </div>
@@ -414,8 +416,8 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '10px 14px',
   borderRadius: 10,
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--bg-input)',
+  border: '1px solid var(--border)',
   color: 'var(--text-primary)',
   fontSize: 13,
   outline: 'none',

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Loader2, Sun } from 'lucide-react'
+import { Send, Loader2, Sun, Menu, ArrowUp } from 'lucide-react'
 import { createClient } from '@/app/lib/supabase/client'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -29,14 +29,15 @@ export default function ChatInterface({
   profile,
   userId,
   sessionId,
-  onSessionCreated
+  onSessionCreated,
+  onOpenSidebar,
 }: {
   profile: Profile | null
   userId: string
   sessionId: string
   onSessionCreated: (sessionId: string, firstMessage: string) => void
+  onOpenSidebar?: () => void
 }) {
-
   const supabase = createClient()
 
   const [messages, setMessages] = useState<Message[]>([])
@@ -49,125 +50,52 @@ export default function ChatInterface({
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Markdown styles
+  // Markdown components
   const mdComponents = {
     p: ({ children }: any) => (
-      <p style={{ margin: '0 0 10px 0', lineHeight: 1.75 }}>
+      <p style={{ margin: '0 0 12px 0', lineHeight: 1.8, fontSize: 15 }}>
         {children}
       </p>
     ),
-
     strong: ({ children }: any) => (
-      <strong style={{ color: '#FDBA74', fontWeight: 600 }}>
-        {children}
-      </strong>
+      <strong style={{ color: 'var(--orange)', fontWeight: 600 }}>{children}</strong>
     ),
-
     em: ({ children }: any) => (
-      <em style={{
-        color: 'rgba(253,186,116,0.8)',
-        fontStyle: 'italic'
-      }}>
-        {children}
-      </em>
+      <em style={{ color: 'var(--orange)', fontStyle: 'italic' }}>{children}</em>
     ),
-
     h1: ({ children }: any) => (
-      <h1 style={{
-        fontSize: 16,
-        fontWeight: 600,
-        color: '#FDBA74',
-        margin: '14px 0 6px',
-        lineHeight: 1.4
-      }}>
-        {children}
-      </h1>
+      <h1 style={{ fontSize: 17, fontWeight: 700, color: 'var(--orange)', margin: '18px 0 8px', lineHeight: 1.4 }}>{children}</h1>
     ),
-
     h2: ({ children }: any) => (
-      <h2 style={{
-        fontSize: 15,
-        fontWeight: 600,
-        color: '#FDBA74',
-        margin: '12px 0 5px',
-        lineHeight: 1.4
-      }}>
-        {children}
-      </h2>
+      <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--orange)', margin: '16px 0 6px', lineHeight: 1.4 }}>{children}</h2>
     ),
-
     h3: ({ children }: any) => (
-      <h3 style={{
-        fontSize: 14,
-        fontWeight: 600,
-        color: 'rgba(253,186,116,0.85)',
-        margin: '10px 0 4px',
-        lineHeight: 1.4
-      }}>
-        {children}
-      </h3>
+      <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--orange)', margin: '12px 0 5px', lineHeight: 1.4 }}>{children}</h3>
     ),
-
     ul: ({ children }: any) => (
-      <ul style={{
-        paddingLeft: 20,
-        margin: '6px 0 10px',
-        listStyleType: 'disc'
-      }}>
-        {children}
-      </ul>
+      <ul style={{ paddingLeft: 22, margin: '6px 0 12px', listStyleType: 'disc' }}>{children}</ul>
     ),
-
     ol: ({ children }: any) => (
-      <ol style={{
-        paddingLeft: 20,
-        margin: '6px 0 10px'
-      }}>
-        {children}
-      </ol>
+      <ol style={{ paddingLeft: 22, margin: '6px 0 12px' }}>{children}</ol>
     ),
-
     li: ({ children }: any) => (
-      <li style={{
-        marginBottom: 5,
-        lineHeight: 1.65,
-        color: 'var(--text-primary)'
-      }}>
-        {children}
-      </li>
+      <li style={{ marginBottom: 6, lineHeight: 1.75, color: 'var(--text-primary)', fontSize: 15 }}>{children}</li>
     ),
-
     blockquote: ({ children }: any) => (
       <blockquote style={{
-        borderLeft: '2px solid rgba(249,115,22,0.4)',
-        paddingLeft: 12,
-        margin: '8px 0',
-        color: 'rgba(255,255,255,0.65)',
-        fontStyle: 'italic'
-      }}>
-        {children}
-      </blockquote>
+        borderLeft: '2px solid rgba(249,115,22,0.5)',
+        paddingLeft: 14, margin: '10px 0',
+        color: 'var(--text-secondary)', fontStyle: 'italic'
+      }}>{children}</blockquote>
     ),
-
     code: ({ children }: any) => (
       <code style={{
-        background: 'rgba(255,255,255,0.08)',
-        padding: '1px 6px',
-        borderRadius: 4,
-        fontSize: 12,
-        fontFamily: 'monospace',
-        color: '#FDBA74'
-      }}>
-        {children}
-      </code>
+        background: 'var(--bg-surface2)', padding: '2px 7px',
+        borderRadius: 5, fontSize: 13, fontFamily: 'monospace', color: 'var(--orange)'
+      }}>{children}</code>
     ),
-
     hr: () => (
-      <hr style={{
-        border: 'none',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        margin: '12px 0'
-      }} />
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '16px 0' }} />
     ),
   }
 
@@ -183,166 +111,100 @@ export default function ChatInterface({
         .eq('user_id', userId)
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true })
-
       setMessages((data as Message[]) || [])
       setHistoryLoaded(true)
     }
-
     load()
   }, [sessionId, userId])
 
   useEffect(() => {
     requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'end'
-      })
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
     })
   }, [messages, loading])
 
   useEffect(() => {
     const el = textareaRef.current
     if (!el) return
-
     el.style.height = 'auto'
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px'
   }, [input])
 
   async function sendMessage(text?: string) {
-
     const msg = (text || input).trim()
-
     if (!msg || loading || isStreaming) return
 
     setInput('')
     setError('')
 
     const isFirst = messages.length === 0
-
-    const userMessage: Message = {
-      role: 'user',
-      content: msg
-    }
-
+    const userMessage: Message = { role: 'user', content: msg }
     const newMessages = [...messages, userMessage]
 
     setMessages(newMessages)
     setLoading(true)
 
-    if (isFirst) {
-      onSessionCreated(sessionId, msg)
-    }
+    if (isFirst) onSessionCreated(sessionId, msg)
 
     await supabase.from('chat_messages').insert({
-      user_id: userId,
-      role: 'user',
-      content: msg,
-      session_id: sessionId
+      user_id: userId, role: 'user', content: msg, session_id: sessionId
     })
 
     let streamStarted = false
 
     try {
-
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messages: newMessages
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages })
       })
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
         throw new Error(errData.error || 'Chat failed')
       }
+      if (!res.body) throw new Error('No response body')
 
-      if (!res.body) {
-        throw new Error('No response body')
-      }
-
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: '' }
-      ])
-
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
       setLoading(false)
       setIsStreaming(true)
-
       streamStarted = true
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
-
       let fullContent = ''
 
       while (true) {
-
         const { done, value } = await reader.read()
-
         if (done) break
-
-        fullContent += decoder.decode(value, {
-          stream: true
-        })
-
+        fullContent += decoder.decode(value, { stream: true })
         setMessages(prev => {
-
           const updated = [...prev]
-
-          updated[updated.length - 1] = {
-            role: 'assistant',
-            content: fullContent
-          }
-
+          updated[updated.length - 1] = { role: 'assistant', content: fullContent }
           return updated
         })
       }
 
       if (fullContent) {
-
         await supabase.from('chat_messages').insert({
-          user_id: userId,
-          role: 'assistant',
-          content: fullContent,
-          session_id: sessionId
+          user_id: userId, role: 'assistant', content: fullContent, session_id: sessionId
         })
       }
-
     } catch (err: unknown) {
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Something went wrong'
-      )
-
+      setError(err instanceof Error ? err.message : 'Something went wrong')
       setMessages(prev => {
-
-        if (!streamStarted) {
-          return prev.slice(0, -1)
-        }
-
+        if (!streamStarted) return prev.slice(0, -1)
         const last = prev[prev.length - 1]
-
-        if (last?.role === 'assistant' && !last.content) {
-          return prev.slice(0, -2)
-        }
-
+        if (last?.role === 'assistant' && !last.content) return prev.slice(0, -2)
         return prev
       })
-
     } finally {
-
       setLoading(false)
       setIsStreaming(false)
     }
   }
 
   function handleKey(e: React.KeyboardEvent) {
-
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       sendMessage()
@@ -350,105 +212,80 @@ export default function ChatInterface({
   }
 
   if (!historyLoaded) {
-
     return (
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <Loader2
-          size={20}
-          color="var(--orange)"
-          strokeWidth={1.5}
-          style={{
-            animation: 'spin 1s linear infinite'
-          }}
-        />
-
-        <style>{`
-          @keyframes spin {
-            from { transform: rotate(0deg) }
-            to   { transform: rotate(360deg) }
-          }
-        `}</style>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 size={20} color="var(--orange)" strokeWidth={1.5} style={{ animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
       </div>
     )
   }
 
+  const canSend = input.trim().length > 0 && !loading && !isStreaming
+
   return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-    <div style={{
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }}>
+      {/* ── Top bar: hamburger + session title ── */}
+      <div style={{
+        flexShrink: 0, height: 48,
+        display: 'flex', alignItems: 'center',
+        padding: '0 16px', gap: 10,
+      }}>
+        <button
+          onClick={onOpenSidebar}
+          style={{
+            width: 34, height: 34, borderRadius: 9, cursor: 'pointer',
+            background: 'transparent', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.2s', flexShrink: 0,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-surface2)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+          title="Conversations"
+        >
+          {/* Changed color from hardcoded white to theme variable */}
+          <Menu size={17} color="var(--text-secondary)" strokeWidth={1.8} />
+        </button>
+        <span style={{
+          fontSize: 13, color: 'var(--text-muted)',
+          fontFamily: 'DM Sans, sans-serif', letterSpacing: '0.01em'
+        }}>
+          {profile?.full_name ? `${profile.full_name.split(' ')[0]}'s Kundali` : 'Daivam Astrologer'}
+        </span>
+      </div>
 
-      {/* Messages */}
+      {/* ── Messages ── */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
         scrollBehavior: 'smooth',
-        padding: '48px 20px 20px'
+        padding: '8px 0 24px',
       }}>
+        <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 20px' }}>
 
-        <div style={{
-          maxWidth: 680,
-          margin: '0 auto'
-        }}>
-
+          {/* Empty state */}
           {messages.length === 0 && (
-
-            <div style={{
-              textAlign: 'center',
-              paddingTop: 24,
-              paddingBottom: 28
-            }}>
-
+            <div style={{ textAlign: 'center', paddingTop: 40, paddingBottom: 32 }}>
               <div style={{
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                margin: '0 auto 16px',
-                background: 'rgba(249,115,22,0.1)',
-                border: '1px solid rgba(249,115,22,0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                width: 56, height: 56, borderRadius: '50%',
+                margin: '0 auto 20px',
+                background: 'rgba(249,115,22,0.08)',
+                border: '1px solid rgba(249,115,22,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-
-                <Sun
-                  size={20}
-                  color="var(--orange)"
-                  strokeWidth={1.5}
-                />
-
+                <Sun size={22} color="var(--orange)" strokeWidth={1.5} />
               </div>
 
-              <h2
-                className="serif"
-                style={{
-                  fontSize: 20,
-                  fontWeight: 600,
-                  color: 'var(--white)',
-                  marginBottom: 8
-                }}
-              >
-                Namaste
-                {profile?.full_name
-                  ? `, ${profile.full_name.split(' ')[0]}`
-                  : ''
-                } 🙏
+              <h2 className="serif" style={{
+                fontSize: 22, fontWeight: 600,
+                color: 'var(--text-primary)', marginBottom: 10
+              }}>
+                Namaste{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''} 🙏
               </h2>
 
               <p style={{
-                fontSize: 13,
-                color: 'var(--text-muted)',
-                lineHeight: 1.7,
-                maxWidth: 360,
-                margin: '0 auto 24px'
+                fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.75,
+                maxWidth: 380, margin: '0 auto 32px'
               }}>
                 {profile?.date_of_birth
                   ? 'Your Kundali is ready. Ask me anything about your chart, life path, or timing.'
@@ -456,382 +293,248 @@ export default function ChatInterface({
                 }
               </p>
 
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 7,
-                maxWidth: 420,
-                margin: '0 auto'
-              }}>
-
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 440, margin: '0 auto' }}>
                 {SUGGESTED.map(q => (
-
                   <button
                     key={q}
                     onClick={() => sendMessage(q)}
                     style={{
-                      padding: '10px 16px',
-                      borderRadius: 10,
-                      textAlign: 'left',
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.07)',
-                      color: 'var(--text-secondary)',
-                      fontSize: 13,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      lineHeight: 1.4,
-                      fontFamily: 'DM Sans, sans-serif'
+                      padding: '11px 18px', borderRadius: 12, textAlign: 'left',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-secondary)', fontSize: 13.5,
+                      cursor: 'pointer', transition: 'all 0.2s',
+                      lineHeight: 1.5, fontFamily: 'DM Sans, sans-serif'
                     }}
                     onMouseEnter={e => {
-                      const el = e.currentTarget
-                      el.style.borderColor = 'rgba(249,115,22,0.25)'
-                      el.style.background = 'rgba(249,115,22,0.05)'
-                      el.style.color = '#FDBA74'
+                      e.currentTarget.style.borderColor = 'var(--border-orange)'
+                      e.currentTarget.style.background = 'var(--orange-glow)'
+                      e.currentTarget.style.color = 'var(--orange)'
                     }}
                     onMouseLeave={e => {
-                      const el = e.currentTarget
-                      el.style.borderColor = 'rgba(255,255,255,0.07)'
-                      el.style.background = 'rgba(255,255,255,0.03)'
-                      el.style.color = 'var(--text-secondary)'
+                      e.currentTarget.style.borderColor = 'var(--border)'
+                      e.currentTarget.style.background = 'var(--bg-card)'
+                      e.currentTarget.style.color = 'var(--text-secondary)'
                     }}
                   >
                     {q}
                   </button>
                 ))}
-
               </div>
-
             </div>
           )}
 
+          {/* Message list */}
           {messages.map((m, i) => {
-
-            const isLastAssistant =
-              m.role === 'assistant' &&
-              i === messages.length - 1
-
-            const showCursor =
-              isLastAssistant &&
-              isStreaming
+            const isLastAssistant = m.role === 'assistant' && i === messages.length - 1
+            const showCursor = isLastAssistant && isStreaming
 
             return (
-
               <MotionDiv
-                  key={i}
-                  initial={{
-                    opacity: 0,
-                    y: 6,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-                  transition={{
-                    duration: 0.18,
-                    ease: 'easeOut',
-                  }}
-                  style={{
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                style={{
                   display: 'flex',
-                  marginBottom: 16,
-                  justifyContent: m.role === 'user'
-                    ? 'flex-end'
-                    : 'flex-start',
+                  marginBottom: m.role === 'user' ? 24 : 28,
+                  justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start',
                   alignItems: 'flex-start',
-                  gap: 10
+                  gap: 12,
                 }}
               >
-
+                {/* Assistant avatar */}
                 {m.role === 'assistant' && (
-
                   <div style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    flexShrink: 0,
-                    marginTop: 2,
+                    width: 30, height: 30, borderRadius: '50%',
+                    flexShrink: 0, marginTop: 1,
                     background: 'rgba(249,115,22,0.1)',
                     border: '1px solid rgba(249,115,22,0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-
-                    <Sun
-                      size={12}
-                      color="var(--orange)"
-                      strokeWidth={1.5}
-                    />
-
+                    <Sun size={13} color="var(--orange)" strokeWidth={1.5} />
                   </div>
                 )}
 
+                {/* Message content */}
                 <div style={{
-                  maxWidth: '76%',
-                  willChange: 'transform, opacity',
-                  transform: 'translateZ(0)',
-                  padding: '11px 15px',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  borderRadius: m.role === 'user'
-                    ? '16px 16px 4px 16px'
-                    : '4px 16px 16px 16px',
-                  background: m.role === 'user'
-                    ? 'rgba(249,115,22,0.12)'
-                    : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${
-                    m.role === 'user'
-                      ? 'rgba(249,115,22,0.2)'
-                      : 'rgba(255,255,255,0.07)'
-                  }`,
-                  fontSize: 14,
-                  lineHeight: 1.75,
-                  color: m.role === 'user'
-                    ? '#FDBA74'
-                    : 'var(--text-primary)',
-                  whiteSpace: m.role === 'user'
-                    ? 'pre-wrap'
-                    : 'normal',
-                  wordBreak: 'break-word'
+                  maxWidth: m.role === 'user' ? '72%' : '88%',
+                  ...(m.role === 'user' ? {
+                    // User bubble: pill-style warm fill
+                    padding: '12px 18px',
+                    borderRadius: '20px 20px 5px 20px',
+                    background: 'rgba(249,115,22,0.13)',
+                    border: '1px solid rgba(249,115,22,0.18)',
+                    fontSize: 15,
+                    lineHeight: 1.7,
+                    color: 'var(--orange)',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  } : {
+                    // Assistant: no bubble, just clean text
+                    fontSize: 15,
+                    lineHeight: 1.8,
+                    color: 'var(--text-primary)',
+                    wordBreak: 'break-word',
+                    paddingTop: 2,
+                  })
                 }}>
-
                   {m.role === 'user' ? (
                     m.content
                   ) : (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={mdComponents}
-                    >
-                      {m.content}
-                    </ReactMarkdown>
+                    <>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                        {m.content}
+                      </ReactMarkdown>
+                      {showCursor && (
+                        <span style={{
+                          display: 'inline-block', width: 7, height: 7,
+                          borderRadius: '50%', background: 'var(--orange)',
+                          marginLeft: 3, verticalAlign: 'middle',
+                          animation: 'blink 1s ease-in-out infinite'
+                        }} />
+                      )}
+                    </>
                   )}
-
-                  {showCursor && (
-                    <div style={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: '50%',
-                      background: 'var(--orange)',
-                      marginTop: 6,
-                      animation: 'blink 1s ease-in-out infinite'
-                    }} />
-                  )}
-
                 </div>
-
               </MotionDiv>
             )
           })}
 
           {/* Loading dots */}
           {loading && (
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 10,
-              marginBottom: 16
-            }}>
-
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 24 }}>
               <div style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                flexShrink: 0,
-                background: 'rgba(249,115,22,0.1)',
-                border: '1px solid rgba(249,115,22,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-
-                <Sun
-                  size={12}
-                  color="var(--orange)"
-                  strokeWidth={1.5}
-                />
-
+                <Sun size={13} color="var(--orange)" strokeWidth={1.5} />
               </div>
-
-              <div style={{
-                padding: '12px 16px',
-                borderRadius: '4px 16px 16px 16px',
-                background: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                display: 'flex',
-                gap: 5,
-                alignItems: 'center'
-              }}>
-
-                {[0,1,2].map(i => (
-                  <div
-                    key={i}
-                    style={{
-                      width: 5,
-                      height: 5,
-                      borderRadius: '50%',
-                      background: 'var(--orange)',
-                      opacity: 0.7,
-                      animation: 'bounce 1.4s ease-in-out infinite',
-                      transform: 'translateZ(0)',
-                      animationDelay: `${i * 0.2}s`
-                    }}
-                  />
+              <div style={{ display: 'flex', gap: 5, alignItems: 'center', paddingTop: 7 }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: 'var(--orange-dim)',
+                    animation: 'bounce 1.4s ease-in-out infinite',
+                    animationDelay: `${i * 0.18}s`
+                  }} />
                 ))}
-
               </div>
-
             </div>
           )}
 
+          {/* Error */}
           {error && (
-
             <div style={{
-              padding: '10px 14px',
-              borderRadius: 10,
-              marginBottom: 12,
-              background: 'rgba(239,68,68,0.08)',
-              border: '1px solid rgba(239,68,68,0.2)',
-              color: '#FCA5A5',
-              fontSize: 13
+              padding: '10px 16px', borderRadius: 10, marginBottom: 14,
+              background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)',
+              color: '#FCA5A5', fontSize: 13
             }}>
               {error} — please try again.
             </div>
           )}
 
           <div ref={bottomRef} />
-
         </div>
-
       </div>
 
-      {/* Input */}
+      {/* ── Input area ── */}
       <div style={{
         flexShrink: 0,
-        padding: '10px 16px 14px',
-        background: 'rgba(12,12,12,0.92)',
-        backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.06)'
+        padding: '10px 20px 18px',
       }}>
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
 
-        <div style={{
-          maxWidth: 680,
-          margin: '0 auto',
-          display: 'flex',
-          gap: 10,
-          alignItems: 'flex-end'
-        }}>
-
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder="Ask your astrologer..."
-            rows={1}
-            disabled={isStreaming}
-            style={{
-              flex: 1,
-              padding: '11px 15px',
-              borderRadius: 12,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: 'var(--text-primary)',
-              fontSize: 14,
-              outline: 'none',
-              resize: 'none',
-              fontFamily: 'DM Sans, sans-serif',
-              lineHeight: 1.5,
-              transition: 'border-color 0.2s, opacity 0.2s',
-              minHeight: 44,
-              maxHeight: 120,
-              opacity: isStreaming ? 0.5 : 1,
-            }}
-            onFocus={e => {
-              e.target.style.borderColor = 'var(--orange)'
-            }}
-            onBlur={e => {
-              e.target.style.borderColor = 'rgba(255,255,255,0.1)'
-            }}
-          />
-
-          <button
-            onClick={() => sendMessage()}
-            disabled={!input.trim() || loading || isStreaming}
-            className="btn-primary"
-            style={{
-              padding: '11px 13px',
-              borderRadius: 12,
-              flexShrink: 0
-            }}
+          {/* Pill-shaped input container */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 0,
+            background: 'var(--bg-input)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: '8px 8px 8px 16px',
+            transition: 'border-color 0.2s',
+          }}
+          onFocusCapture={e => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--orange)'
+          }}
+          onBlurCapture={e => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'
+          }}
           >
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              placeholder="Ask your astrologer…"
+              rows={1}
+              disabled={isStreaming}
+              style={{
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--text-primary)',
+                fontSize: 15,
+                resize: 'none',
+                fontFamily: 'inherit',
+                lineHeight: 1.6,
+                minHeight: 28,
+                maxHeight: 160,
+                padding: '2px 0',
+                opacity: isStreaming ? 0.5 : 1,
+              }}
+            />
 
-            {loading
-              ? (
-                <Loader2
-                  size={15}
-                  strokeWidth={1.5}
-                  style={{
-                    animation: 'spin 1s linear infinite'
-                  }}
-                />
-              )
-              : (
-                <Send
-                  size={15}
-                  strokeWidth={1.5}
-                />
-              )
-            }
+            {/* Send button — inside the pill */}
+            <button
+              onClick={() => sendMessage()}
+              disabled={!canSend}
+              style={{
+                flexShrink: 0,
+                width: 36, height: 36,
+                borderRadius: 10,
+                border: 'none',
+                cursor: canSend ? 'pointer' : 'default',
+                background: canSend ? 'var(--orange)' : 'var(--bg-surface2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s',
+                transform: canSend ? 'scale(1)' : 'scale(0.95)',
+              }}
+            >
+              {loading
+                ? <Loader2 size={15} color="white" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
+                /* Changed color from hardcoded white/opacity to theme variables */
+                : <ArrowUp size={16} color={canSend ? 'white' : 'var(--text-muted)'} strokeWidth={2.5} />
+              }
+            </button>
+          </div>
 
-          </button>
-
+          <p style={{
+            textAlign: 'center', fontSize: 11,
+            color: 'var(--text-hint)', marginTop: 8,
+            fontFamily: 'DM Sans, sans-serif'
+          }}>
+            {isStreaming ? 'Receiving response…' : 'Enter to send · Shift+Enter for new line'}
+          </p>
         </div>
-
-        <p style={{
-          textAlign: 'center',
-          fontSize: 11,
-          color: 'var(--text-muted)',
-          marginTop: 8
-        }}>
-          {isStreaming
-            ? 'Receiving response…'
-            : 'Enter to send · Shift+Enter for new line'
-          }
-        </p>
-
       </div>
 
       <style>{`
         @keyframes bounce {
-          0%,80%,100% {
-            transform: translateY(0)
-          }
-          40% {
-            transform: translateY(-5px)
-          }
+          0%,80%,100% { transform: translateY(0) }
+          40% { transform: translateY(-5px) }
         }
-
         @keyframes spin {
-          from {
-            transform: rotate(0deg)
-          }
-          to {
-            transform: rotate(360deg)
-          }
+          from { transform: rotate(0deg) }
+          to   { transform: rotate(360deg) }
         }
-
         @keyframes blink {
-          0%,100% {
-            opacity: 1
-          }
-          50% {
-            opacity: 0
-          }
+          0%,100% { opacity: 1 }
+          50%     { opacity: 0 }
         }
       `}</style>
-
     </div>
   )
 }

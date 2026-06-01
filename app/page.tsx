@@ -1,776 +1,402 @@
+// app/page.tsx
 import Link from 'next/link'
-import {
-  Sparkles, MapPin, Clock, MessageCircle, Star,
-  Moon, Sun, TrendingUp, Heart, ChevronRight, Zap
-} from 'lucide-react'
-import { MotionDiv } from '@/app/components/motion-wrapper'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/server'
+import type { Metadata } from 'next'
+import LandingScripts from '@/app/components/LandingScripts'
+import { ThemeToggle } from '@/app/components/ThemeProvider'
+import '@/app/globals.css'
+
+export const metadata: Metadata = {
+  title: 'Daivam — Free Vedic Kundali & AI Astrologer',
+  description:
+    'Generate your free Janam Kundali online in seconds. AI-powered Vedic astrology for career, marriage, health and destiny. Based on your exact birth date, time and place.',
+  alternates: { canonical: 'https://daivam.app' },
+}
+
+const SunIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M16.9 16.9l2.1 2.1M4.9 19.1l2.1-2.1M16.9 7.1l2.1-2.1" />
+  </svg>
+)
+
+const ArrowRight = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+    <path d="M5 12h14M12 5l7 7-7 7" />
+  </svg>
+)
+
+const ChevronRight = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(249,115,22,0.22)" strokeWidth="1.5" aria-hidden="true">
+    <path d="M9 18l6-6-6-6" />
+  </svg>
+)
+
+const StarIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
+    <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" />
+  </svg>
+)
+
+const FEATURES = [
+  {
+    wide: true,
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M16.9 16.9l2.1 2.1M4.9 19.1l2.1-2.1M16.9 7.1l2.1-2.1" />
+      </svg>
+    ),
+    title: 'Lagna Chart',
+    body: 'Your rising sign, all 9 planets across 12 houses. The complete picture of who you are and how your life unfolds — rendered as a North Indian chart with full house interpretations.',
+  },
+  {
+    wide: false,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
+        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+      </svg>
+    ),
+    title: 'Navamsa (D9)',
+    body: 'Marriage chart and soul purpose — the deeper layer of your destiny and spiritual calling.',
+  },
+  {
+    wide: false,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+        <polyline points="16 7 22 7 22 13" />
+      </svg>
+    ),
+    title: 'Vimshottari Dasha',
+    body: 'Your 120-year life timeline. Know which planetary period you are in and what it activates.',
+  },
+  {
+    wide: false,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+    ),
+    title: 'Live Transits',
+    body: "Today's planets over your natal chart. See what cosmic energies are active right now.",
+  },
+  {
+    wide: false,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z" />
+        <path d="M12 6v6l4 2" />
+      </svg>
+    ),
+    title: 'Daily Panchang',
+    body: 'Tithi, Nakshatra, Yoga, Karana — auspicious timings tailored to your day and location.',
+  },
+  {
+    wide: false,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+      </svg>
+    ),
+    title: 'Kundali Matching',
+    body: 'Ashtakoot Guna Milan — check compatibility with your partner across all 8 Kootas.',
+  },
+]
+
+const TRUST_ITEMS = [
+  'Vedic Kundali', 'Vimshottari Dasha', 'Lagna Chart', 'Navamsa D9',
+  'All 9 Grahas', 'Nakshatra Analysis', 'Kundali Matching', 'Daily Panchang',
+  'Career Timing', 'Marriage Guidance', 'Transit Analysis', 'AI Powered',
+]
+
+const KHOUSES = [
+  { num: '12', planet: 'Ket',       corner: 'corner'  },
+  { num: '1',  planet: 'Lag',       corner: ''        },
+  { num: '2',  planet: 'Sun\u00A0Mer', corner: 'corner2' },
+  { num: '11', planet: 'Sat',       corner: ''        },
+  { num: '',   planet: '',          corner: 'center'  },
+  { num: '3',  planet: 'Ven',       corner: ''        },
+  { num: '10', planet: 'Mar',       corner: 'corner2' },
+  { num: '9',  planet: 'Jup',       corner: ''        },
+  { num: '4',  planet: 'Moon',      corner: 'corner'  },
+]
 
 export default async function Home() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect('/dashboard')
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (user) {
-    redirect('/dashboard')
-  }
   return (
-    <div style={{ minHeight: '100vh', overflowX: 'hidden' }}>
-      <div className="stars" />
+    <div className="landing-page">
 
       {/* ── Navbar ── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-        padding: '0 32px', height: 60,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(12,12,12,0.8)',
-        backdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sun size={18} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize: 18, fontWeight: 600, color: 'var(--white)' }}>Jyotish AI</span>
+      <nav className="lp-nav" role="navigation" aria-label="Main navigation">
+        <Link href="/" className="lp-nav-brand" aria-label="Daivam home">
+          <div className="lp-nav-orb" aria-hidden="true"><SunIcon /></div>
+          <span className="lp-nav-name">Daivam</span>
+        </Link>
+        <div className="lp-nav-links">
+          <a href="#how" className="lp-nav-link">How it works</a>
+          <a href="#features" className="lp-nav-link">Features</a>
+          <a href="#demo" className="lp-nav-link">Live demo</a>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Link href="/login">
-            <button className="btn-ghost" style={{ fontSize: 13, padding: '7px 16px' }}>Sign in</button>
-          </Link>
-          <Link href="/signup">
-            <button className="btn-primary" style={{ fontSize: 13, padding: '7px 16px' }}>Get started free</button>
+        <div className="lp-nav-actions">
+          <ThemeToggle />
+          <Link href="/login" className="btn-ghost nav-signin-btn">Sign in</Link>
+          <Link href="/signup" className="btn-primary nav-cta-btn">
+            <span>Get started</span><span className="hide-mobile">&nbsp;</span> <ArrowRight size={14} />
           </Link>
         </div>
       </nav>
-      
+
       {/* ── Hero ── */}
-      <MotionDiv
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.35 }}
-      >
-      <section style={{
-        minHeight: '100vh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: '100px 24px 60px', textAlign: 'center',
-        position: 'relative', zIndex: 1
-      }}>
-        {/* Eyebrow pill */}
-        <MotionDiv
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            delay: 0.05,
-            duration: 0.3,
-          }}
-        >
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 32,
-          padding: '6px 16px', borderRadius: 100,
-          background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)'
-        }}>
-          <Sparkles size={12} color="var(--orange)" strokeWidth={1.5} />
-          <span style={{ fontSize: 11, color: 'var(--orange)', letterSpacing: '0.12em', fontWeight: 400, textTransform: 'uppercase' }}>
-            Vedic Astrology · AI Powered
+      <section className="hero" aria-labelledby="hero-heading">
+        <div className="hero-left">
+          <div className="hero-eyebrow">
+            <StarIcon />
+            दैवम् &middot; Jyotish &middot; AI Astrologer
+          </div>
+          <span className="hero-shloka deva" aria-label="Bhagavad Gita 2.47 in Sanskrit">
+            कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।<br />
+            मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥
           </span>
-        </div>
-        </MotionDiv>
-
-        {/* Kundali SVG — fixed: transparent fill, visible strokes */}
-        <div style={{ position: 'relative', width: 180, height: 180, marginBottom: 40 }}>
-          <svg viewBox="0 0 180 180" width="180" height="180" xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible' }}>
-            <defs>
-              <style>{`
-                @keyframes kspin  { to { transform: rotate(360deg);  } }
-                @keyframes krspin { to { transform: rotate(-360deg); } }
-                @keyframes kpulse { 0%,100%{opacity:.5} 50%{opacity:1} }
-                .kr1 { transform-origin:90px 90px; animation: kspin  60s linear infinite; }
-                .kr2 { transform-origin:90px 90px; animation: krspin 42s linear infinite; }
-                .kr3 { transform-origin:90px 90px; animation: kspin  44s linear infinite; }
-                .kcore { animation: kpulse 3s ease-in-out infinite; }
-              `}</style>
-            </defs>
-
-            {/* Outer ring */}
-            <g className="kr3">
-              <circle cx="90" cy="90" r="80" fill="none" stroke="rgba(249,115,22,0.15)" strokeWidth="1" />
-              {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg, i) => {
-                const r = deg * Math.PI / 180
-                return <circle key={i} cx={90 + 80*Math.cos(r)} cy={90 + 80*Math.sin(r)}
-                  r={i % 3 === 0 ? 3 : 1.5}
-                  fill={i % 3 === 0 ? '#F97316' : 'rgba(249,115,22,0.5)'} />
-              })}
-            </g>
-
-            {/* Mid ring */}
-            <g className="kr2">
-              <circle cx="90" cy="90" r="57" fill="none" stroke="rgba(249,115,22,0.2)" strokeWidth="1" strokeDasharray="3 7" />
-              {[0,45,90,135,180,225,270,315].map((deg, i) => {
-                const r = deg * Math.PI / 180
-                return <circle key={i} cx={90 + 57*Math.cos(r)} cy={90 + 57*Math.sin(r)}
-                  r="2.5" fill={i % 2 === 0 ? '#F97316' : 'rgba(255,255,255,0.6)'} />
-              })}
-            </g>
-
-            {/* Inner ring */}
-            <g className="kr1">
-              <circle cx="90" cy="90" r="34" fill="none" stroke="rgba(249,115,22,0.3)" strokeWidth="1" />
-              {[0,60,120,180,240,300].map((deg, i) => {
-                const r = deg * Math.PI / 180
-                return <circle key={i} cx={90 + 34*Math.cos(r)} cy={90 + 34*Math.sin(r)}
-                  r="2" fill="#F97316" />
-              })}
-            </g>
-
-            {/* Core — no fill, just stroke ring + symbol */}
-            <g className="kcore">
-              <circle cx="90" cy="90" r="16" fill="rgba(249,115,22,0.1)" stroke="#F97316" strokeWidth="1.5" />
-              <text x="90" y="95" textAnchor="middle" fontSize="16"
-                fill="#F97316" fontFamily="serif" fontWeight="400">☉</text>
-            </g>
-          </svg>
-
-          {/* Ambient glow */}
-          <div style={{
-            position: 'absolute', inset: -30, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(249,115,22,0.2) 0%, transparent 68%)',
-            zIndex: -1, pointerEvents: 'none'
-          }} />
+          <span className="hero-shloka-trans">
+            Bhagavad Gita 2.47 — Act rightly; the stars reveal the path, not the chains.
+          </span>
+          <h1 className="hero-h1" id="hero-heading">
+            Your chart.<br />
+            <em>Your destiny.</em><br />
+            Illuminated.
+          </h1>
+          <p className="hero-sub">
+            Enter your birth details once. Receive deep, personal Vedic guidance on career,
+            love, health and destiny — from an AI that truly understands Jyotish.
+          </p>
+          <div className="hero-cta-row">
+            <Link href="/signup" className="btn-primary btn-primary-lg">
+              Create your free Kundali <ArrowRight size={16} />
+            </Link>
+            <Link href="/login" className="btn-ghost-lg">Sign in</Link>
+          </div>
+          <p className="hero-note">
+            Free forever &nbsp;<span>·</span>&nbsp;
+            No credit card &nbsp;<span>·</span>&nbsp;
+            2 minutes
+          </p>
         </div>
 
-        {/* Heading */}
-        <h1 className="serif" style={{
-          fontSize: 'clamp(44px, 8.5vw, 72px)', fontWeight: 600,
-          lineHeight: 1.05, letterSpacing: '-0.02em',
-          color: 'var(--white)', marginBottom: 18, maxWidth: 580
-        }}>
-          Your stars,<br />
-          <span style={{ color: 'var(--orange)' }}>decoded by AI</span>
-        </h1>
-
-        <p style={{
-          fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.75,
-          maxWidth: 440, marginBottom: 10, fontWeight: 300
-        }}>
-          Enter your birth details once. Get deep, personalised Vedic astrology guidance on career, relationships, health, and destiny.
-        </p>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 40, letterSpacing: '0.03em' }}>
-          Based on your unique Kundali · Powered by Claude AI · Free forever
-        </p>
-
-        <Link href="/signup">
-          <button className="btn-primary" style={{ fontSize: 15, padding: '14px 36px', borderRadius: 12, gap: 8 }}>
-            Create your free Kundali
-            <ChevronRight size={16} strokeWidth={2} />
-          </button>
-        </Link>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>No credit card · 2 minutes · All devices</p>
-
-        {/* Stats */}
-        <div style={{
-          display: 'flex', gap: 32, marginTop: 52,
-          flexWrap: 'wrap', justifyContent: 'center'
-        }}>
-          {[['2,400+','Kundalis created'],['9','Planets tracked'],['4.9★','Avg. rating']].map(([n, l], i) => (
-            <MotionDiv
-            key={l}
-            initial={{
-              opacity: 0,
-              y: 8,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            transition={{
-              delay: 0.3 + i * 0.08,
-              duration: 0.25,
-            }}
-            style={{ textAlign: 'center' }}
-            >
-            <div key={l} style={{ textAlign: 'center' }}>
-              <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: 'var(--orange)' }}>{n}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em', marginTop: 2 }}>{l}</div>
+        <div className="hero-right" aria-label="Animated Vedic birth chart">
+          <div className="hero-chart-wrap">
+            <div className="hero-chart-glow" aria-hidden="true" />
+            <div className="orbit-ring orbit1" aria-hidden="true"><div className="orbit-dot" /></div>
+            <div className="orbit-ring orbit2" aria-hidden="true"><div className="orbit-dot2" /></div>
+            <div className="kundali-grid" role="img" aria-label="North Indian Vedic birth chart">
+              {KHOUSES.map((h, i) =>
+                h.corner === 'center' ? (
+                  <div key={i} className="khouse center">
+                    <span className="center-symbol deva" aria-label="Aum">ॐ</span>
+                  </div>
+                ) : (
+                  <div key={i} className={`khouse ${h.corner}`}>
+                    <span className="hnum">{h.num}</span>
+                    <span className="planet">{h.planet}</span>
+                  </div>
+                )
+              )}
             </div>
-            </MotionDiv>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Trust marquee ── */}
+      <div className="trust-bar" aria-label="Feature highlights">
+        <div className="trust-track" aria-hidden="true">
+          {[...TRUST_ITEMS, ...TRUST_ITEMS].map((item, i) => (
+            <span key={i} className="trust-item">
+              <span className="trust-dot" />
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── How it works ── */}
+      <section className="section reveal" id="how" aria-labelledby="how-heading">
+        <p className="section-label">How it works</p>
+        <h2 className="section-h2" id="how-heading">Three steps to <em>clarity</em></h2>
+        <div className="steps-wrap">
+          <div className="step reveal reveal-d1">
+            <div className="step-num">01</div>
+            <div className="step-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5">
+                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+            <div className="step-title">Enter birth details</div>
+            <div className="step-body">Date, time, and place of birth — takes under 2 minutes. Precision in input means precision in insight.</div>
+          </div>
+          <div className="step-arrow"><ChevronRight /></div>
+          <div className="step reveal reveal-d2">
+            <div className="step-num">02</div>
+            <div className="step-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5">
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10" /><path d="M12 6v6l4 2" />
+              </svg>
+            </div>
+            <div className="step-title">Your Kundali is cast</div>
+            <div className="step-body">Planetary positions, house placements, Dasha cycles — computed instantly with Swiss Ephemeris precision.</div>
+          </div>
+          <div className="step-arrow"><ChevronRight /></div>
+          <div className="step reveal reveal-d3">
+            <div className="step-num">03</div>
+            <div className="step-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+              </svg>
+            </div>
+            <div className="step-title">Ask anything</div>
+            <div className="step-body">Chat in plain language. Career, love, timing — your AI astrologer answers using your complete chart context.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Chat demo ── */}
+      <div className="chat-section reveal" id="demo" aria-label="Live AI demo">
+        <div className="chat-inner">
+          <p className="section-label">Live example</p>
+          <h2 className="section-h2" style={{ maxWidth: 520, margin: '0 auto' }}>
+            Ask anything.<br /><em>Your chart answers.</em>
+          </h2>
+          <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--lp-text3)', marginTop: 16, lineHeight: 1.75, maxWidth: 440, marginLeft: 'auto', marginRight: 'auto' }}>
+            Not generic horoscopes. Every answer drawn from{' '}
+            <em style={{ color: 'rgba(253,186,116,0.8)', fontStyle: 'italic' }}>your exact Kundali</em>
+            {' '}— planets, houses, Dasha, Nakshatra.
+          </p>
+          <div className="chat-window" role="region" aria-label="Sample conversation">
+            <div className="chat-titlebar">
+              <div className="chat-avatar" aria-hidden="true"><SunIcon /></div>
+              <span className="chat-name">Daivam Astrologer</span>
+              <div className="online-pill">
+                <span className="online-dot" aria-hidden="true" /> online
+              </div>
+            </div>
+            <div className="chat-messages" id="chat-msgs">
+              <div className="msg-user" id="lp-msg1" style={{ opacity: 0, transition: 'opacity 0.4s' }}>
+                When is a good time to change careers?
+              </div>
+              <div className="msg-ai" id="lp-msg2" style={{ opacity: 0, transition: 'opacity 0.4s' }}>
+                <div className="chat-avatar" aria-hidden="true"><SunIcon /></div>
+                <div className="msg-text" id="lp-msg2-text" />
+              </div>
+              <div className="msg-user" id="lp-msg3" style={{ opacity: 0, transition: 'opacity 0.4s' }}>
+                What about marriage — is there a good period coming?
+              </div>
+              <div className="msg-ai" id="lp-msg4" style={{ opacity: 0, transition: 'opacity 0.4s' }}>
+                <div className="chat-avatar" aria-hidden="true"><SunIcon /></div>
+                <div className="msg-text" id="lp-msg4-text" />
+              </div>
+            </div>
+            <div className="chat-input-bar">
+              <span className="chat-fake-input">Ask about your Nakshatra, health, or finances…</span>
+              <div className="chat-send-btn" role="button" aria-label="Send message" tabIndex={0}>
+                <ArrowRight size={14} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Features ── */}
+      <section className="section reveal" id="features" aria-labelledby="features-heading">
+        <p className="section-label">What&apos;s inside</p>
+        <h2 className="section-h2" id="features-heading">Everything your<br /><em>Kundali holds</em></h2>
+        <div className="features-grid">
+          {FEATURES.map((f, i) => (
+            <div key={i} className={`f-card${f.wide ? ' wide' : ''}`} tabIndex={0}>
+              <div className="f-icon" aria-hidden="true">{f.icon}</div>
+              <div>
+                <div className="f-title">{f.title}</div>
+                <div className="f-body">{f.body}</div>
+              </div>
+            </div>
           ))}
         </div>
       </section>
-      </MotionDiv>
-
-      {/* ── Curved divider down ── */}
-      <div style={{ marginTop: -2, lineHeight: 0, position: 'relative', zIndex: 1 }}>
-        <svg viewBox="0 0 1440 60" width="100%" preserveAspectRatio="none" style={{ display: 'block' }}>
-          <path d="M0,0 Q720,60 1440,0 L1440,60 L0,60 Z" fill="rgba(249,115,22,0.04)" />
-          <path d="M0,0 Q720,60 1440,0" fill="none" stroke="rgba(249,115,22,0.12)" strokeWidth="1" />
-        </svg>
-      </div>
-
-      {/* ── How it works — horizontal flow ── */}
-      <MotionDiv
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 0.45 }}
-      >
-      <section style={{ padding: '72px 24px', position: 'relative', zIndex: 1 }}>
-        <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--orange)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>How it works</p>
-          <h2 className="serif" style={{ textAlign: 'center', fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 600, color: 'var(--white)', marginBottom: 52 }}>
-            Three steps to clarity
-          </h2>
-
-          <div style={{ display: 'flex', gap: 0, alignItems: 'flex-start', position: 'relative' }}>
-            {/* Connecting line */}
-            <div style={{
-              position: 'absolute', top: 28, left: '16.5%', right: '16.5%', height: 1,
-              background: 'linear-gradient(90deg, rgba(249,115,22,0.3), rgba(249,115,22,0.15), rgba(249,115,22,0.3))',
-              zIndex: 0
-            }} />
-
-            {[
-              { icon: <MapPin size={20} color="var(--orange)" strokeWidth={1.5} />, n: '01', title: 'Enter birth details', body: 'Date, time, and place of birth. Takes under 2 minutes.' },
-              { icon: <Moon size={20} color="var(--orange)" strokeWidth={1.5} />, n: '02', title: 'We compute your Kundali', body: 'Planetary positions, house placements, and Dasha — calculated instantly.' },
-              { icon: <MessageCircle size={20} color="var(--orange)" strokeWidth={1.5} />, n: '03', title: 'Ask anything', body: 'Chat with your personal AI astrologer in plain language.' },
-            ].map(({ icon, n, title, body }) => (
-              <div key={n} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '0 16px', position: 'relative', zIndex: 1 }}>
-                {/* Icon circle */}
-                <div style={{
-                  width: 56, height: 56, borderRadius: '50%',
-                  background: 'rgba(12,12,12,0.9)',
-                  border: '1px solid rgba(249,115,22,0.35)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: 20, flexShrink: 0
-                }}>{icon}</div>
-                <div className="serif" style={{ fontSize: 11, color: 'rgba(249,115,22,0.4)', letterSpacing: '0.1em', marginBottom: 8 }}>{n}</div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8, lineHeight: 1.4 }}>{title}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.65 }}>{body}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      </MotionDiv>
-
-      {/* ── Curved divider up ── */}
-      <div style={{ lineHeight: 0, position: 'relative', zIndex: 1 }}>
-        <svg viewBox="0 0 1440 50" width="100%" preserveAspectRatio="none" style={{ display: 'block' }}>
-          <path d="M0,50 Q720,0 1440,50 L1440,0 L0,0 Z" fill="rgba(249,115,22,0.03)" />
-          <path d="M0,50 Q720,0 1440,50" fill="none" stroke="rgba(249,115,22,0.1)" strokeWidth="1" />
-        </svg>
-      </div>
-
-      {/* ── Bento features grid ── */}
-      <MotionDiv
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.15 }}
-        transition={{ duration: 0.45 }}
-      >
-      <section
-        style={{
-          padding: '72px 24px',
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 720,
-            margin: '0 auto',
-          }}
-        >
-          <p
-            style={{
-              textAlign: 'center',
-              fontSize: 11,
-              color: 'var(--orange)',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              marginBottom: 10,
-            }}
-          >
-            What's inside
-          </p>
-
-          <h2
-            className="serif"
-            style={{
-              textAlign: 'center',
-              fontSize: 'clamp(26px, 4vw, 38px)',
-              fontWeight: 600,
-              color: 'var(--white)',
-              marginBottom: 40,
-            }}
-          >
-            Everything your Kundali holds
-          </h2>
-
-          {/* GRID */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gridTemplateRows: 'auto auto',
-              gap: 12,
-            }}
-          >
-            {/* Lagna */}
-            <MotionDiv
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-              style={{
-                gridColumn: 'span 2',
-              }}
-            >
-              <div
-                className="card"
-                style={{
-                  padding: '28px 28px',
-                  display: 'flex',
-                  gap: 20,
-                  alignItems: 'flex-start',
-                  height: '100%',
-                }}
-              >
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    flexShrink: 0,
-                    background: 'rgba(249,115,22,0.1)',
-                    border:
-                      '1px solid rgba(249,115,22,0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Sun
-                    size={20}
-                    color="var(--orange)"
-                    strokeWidth={1.5}
-                  />
-                </div>
-
-                <div>
-                  <div
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 500,
-                      color: 'var(--text-primary)',
-                      marginBottom: 6,
-                    }}
-                  >
-                    Lagna Chart
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: 'var(--text-muted)',
-                      lineHeight: 1.65,
-                    }}
-                  >
-                    Your rising sign, planetary
-                    positions across all 12 houses.
-                    The complete picture of who you
-                    are and how the world sees you.
-                  </div>
-                </div>
-              </div>
-            </MotionDiv>
-
-            {/* Navamsa */}
-            <MotionDiv
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div
-                className="card"
-                style={{
-                  padding: '24px 20px',
-                  height: '100%',
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    marginBottom: 16,
-                    background: 'rgba(249,115,22,0.08)',
-                    border:
-                      '1px solid rgba(249,115,22,0.18)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Heart
-                    size={18}
-                    color="var(--orange)"
-                    strokeWidth={1.5}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: 'var(--text-primary)',
-                    marginBottom: 5,
-                  }}
-                >
-                  Navamsa
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  Marriage & soul purpose chart
-                </div>
-              </div>
-            </MotionDiv>
-
-            {/* AI Astrologer */}
-            <MotionDiv
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-              style={{
-                gridRow: 'span 2',
-              }}
-            >
-              <div
-                className="card"
-                style={{
-                  padding: '28px 24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  height: '100%',
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      marginBottom: 20,
-                      background: 'rgba(249,115,22,0.1)',
-                      border:
-                        '1px solid rgba(249,115,22,0.2)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <MessageCircle
-                      size={20}
-                      color="var(--orange)"
-                      strokeWidth={1.5}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 500,
-                      color: 'var(--text-primary)',
-                      marginBottom: 8,
-                    }}
-                  >
-                    AI Astrologer
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: 'var(--text-muted)',
-                      lineHeight: 1.7,
-                    }}
-                  >
-                    Ask anything in plain language.
-                    Career, marriage, health, timing
-                    — your personal guide answers
-                    with Kundali context.
-                  </div>
-                </div>
-
-                {/* Chat Preview */}
-                <div style={{ marginTop: 24 }}>
-                  {[
-                    {
-                      q: true,
-                      t: 'When is a good time to change careers?',
-                    },
-                    {
-                      q: false,
-                      t: 'Saturn enters your 10th house in late 2025...',
-                    },
-                  ].map(({ q, t }, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        marginBottom: 8,
-                        padding: '8px 12px',
-                        borderRadius: 10,
-                        fontSize: 11,
-                        background: q
-                          ? 'rgba(249,115,22,0.08)'
-                          : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${
-                          q
-                            ? 'rgba(249,115,22,0.15)'
-                            : 'rgba(255,255,255,0.07)'
-                        }`,
-                        color: q
-                          ? '#FDBA74'
-                          : 'var(--text-secondary)',
-                        textAlign: q ? 'right' : 'left',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {t}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </MotionDiv>
-
-            {/* Vimshottari */}
-            <MotionDiv
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div
-                className="card"
-                style={{
-                  padding: '24px 20px',
-                  height: '100%',
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    marginBottom: 16,
-                    background: 'rgba(249,115,22,0.08)',
-                    border:
-                      '1px solid rgba(249,115,22,0.18)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <TrendingUp
-                    size={18}
-                    color="var(--orange)"
-                    strokeWidth={1.5}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: 'var(--text-primary)',
-                    marginBottom: 5,
-                  }}
-                >
-                  Vimshottari Dasha
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  Life timeline & planetary periods
-                </div>
-              </div>
-      </MotionDiv>
-
-            {/* 9 Grahas */}
-            <MotionDiv
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div
-                className="card"
-                style={{
-                  padding: '24px 20px',
-                  height: '100%',
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    marginBottom: 16,
-                    background: 'rgba(249,115,22,0.08)',
-                    border:
-                      '1px solid rgba(249,115,22,0.18)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Star
-                    size={18}
-                    color="var(--orange)"
-                    strokeWidth={1.5}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: 'var(--text-primary)',
-                    marginBottom: 5,
-                  }}
-                >
-                  9 Grahas
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  All planetary influences mapped
-                </div>
-              </div>
-            </MotionDiv>
-
-            {/* Instant */}
-            <MotionDiv
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div
-                className="card"
-                style={{
-                  padding: '24px 20px',
-                  height: '100%',
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    marginBottom: 16,
-                    background: 'rgba(249,115,22,0.08)',
-                    border:
-                      '1px solid rgba(249,115,22,0.18)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Zap
-                    size={18}
-                    color="var(--orange)"
-                    strokeWidth={1.5}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: 'var(--text-primary)',
-                    marginBottom: 5,
-                  }}
-                >
-                  Instant results
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  Chart computed in seconds
-                </div>
-              </div>
-            </MotionDiv>
-          </div>
-        </div>
-      </section>
-      </MotionDiv>
 
       {/* ── Final CTA ── */}
-      <MotionDiv
-        initial={{ opacity: 0, scale: 0.98 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 0.4 }}
-      >
-      <section style={{ padding: '60px 24px 100px', position: 'relative', zIndex: 1, textAlign: 'center' }}>
-        <div style={{
-          maxWidth: 480, margin: '0 auto', padding: '48px 32px',
-          borderRadius: 24,
-          background: 'rgba(249,115,22,0.04)',
-          border: '1px solid rgba(249,115,22,0.15)',
-          position: 'relative', overflow: 'hidden'
-        }}>
-          {/* Ambient shape */}
-          <div style={{
-            position: 'absolute', top: -40, right: -40, width: 160, height: 160,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)',
-            pointerEvents: 'none'
-          }} />
-          <Sun size={28} color="var(--orange)" strokeWidth={1.5} style={{ marginBottom: 20 }} />
-          <h2 className="serif" style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, color: 'var(--white)', marginBottom: 12 }}>
-            Ready to read your stars?
+      <div className="cta-section reveal">
+        <div className="cta-box">
+          <div className="cta-top-glow" aria-hidden="true" />
+          <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'var(--orange-glow)', border: '1px solid var(--orange-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 26px' }} aria-hidden="true">
+            <SunIcon />
+          </div>
+          <span className="cta-shloka deva" aria-label="Bhagavad Gita 4.7 in Sanskrit">
+            यदा यदा हि धर्मस्य ग्लानिर्भवति भारत।<br />
+            अभ्युत्थानमधर्मस्य तदात्मानं सृजाम्यहम्॥
+          </span>
+          <h2 className="cta-h2">
+            Your chart has been<br /><em>waiting since birth.</em>
           </h2>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 28, maxWidth: 340, margin: '0 auto 28px' }}>
-            Join thousands of seekers who've unlocked the ancient wisdom of Jyotish with modern AI.
+          <p className="cta-body">
+            The stars wrote your story at the moment you arrived. Discover what is written —
+            with the clarity of ancient Jyotish and the precision of modern AI.
           </p>
-          <Link href="/signup">
-            <button className="btn-primary" style={{ fontSize: 15, padding: '13px 36px' }}>
-              Create your Kundali — it's free →
-            </button>
+          <Link href="/signup" className="btn-primary btn-primary-lg" style={{ display: 'inline-flex' }}>
+            Begin your reading — it&apos;s free <ArrowRight size={16} />
           </Link>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 16 }}>
+          <p className="cta-signin">
             Already have an account?{' '}
-            <Link href="/login" style={{ color: 'var(--orange)', textDecoration: 'none' }}>Sign in</Link>
+            <Link href="/login">Sign in</Link>
           </p>
         </div>
-      </section>
-      </MotionDiv>
+      </div>
 
       {/* ── Footer ── */}
-      <footer style={{
-        padding: '20px 32px', borderTop: '1px solid rgba(255,255,255,0.05)',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        position: 'relative', zIndex: 1, flexWrap: 'wrap', gap: 8
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sun size={14} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Jyotish AI</span>
+      <footer className="lp-footer">
+        <div className="lp-footer-inner">
+          <div className="lp-footer-brand-col">
+            <Link href="/" className="footer-brand" aria-label="Daivam home">
+              <div className="lp-nav-orb" aria-hidden="true"><SunIcon /></div>
+              <span style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 17, color: 'var(--cream)', letterSpacing: '0.06em' }}>Daivam</span>
+            </Link>
+            <p className="lp-footer-desc">
+              Ancient Jyotish wisdom,<br />illuminated by modern AI.
+            </p>
+            <p className="lp-footer-copy">© 2026 Daivam. All rights reserved.</p>
+          </div>
+          <div className="lp-footer-links-wrap">
+            <div className="lp-footer-col">
+              <p className="lp-footer-col-label">Product</p>
+              <a href="#how" className="lp-footer-link">How it works</a>
+              <a href="#features" className="lp-footer-link">Features</a>
+              <a href="#demo" className="lp-footer-link">Live demo</a>
+              <Link href="/signup" className="lp-footer-link">Create Kundali</Link>
+            </div>
+            <div className="lp-footer-col">
+              <p className="lp-footer-col-label">Account</p>
+              <Link href="/login" className="lp-footer-link">Sign in</Link>
+              <Link href="/signup" className="lp-footer-link">Sign up free</Link>
+              <Link href="/login" className="lp-footer-link">Dashboard</Link>
+              <Link href="/login" className="lp-footer-link">Edit profile</Link>
+            </div>
+            <div className="lp-footer-col">
+              <p className="lp-footer-col-label">Explore</p>
+              <Link href="/login" className="lp-footer-link">Lagna Chart</Link>
+              <Link href="/login" className="lp-footer-link">Daily Panchang</Link>
+              <Link href="/login" className="lp-footer-link">Transits</Link>
+              <Link href="/login" className="lp-footer-link">Kundali Matching</Link>
+            </div>
+          </div>
         </div>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Rooted in Vedic tradition · Powered by modern AI</p>
+        <div className="lp-footer-bottom">
+          <span className="lp-footer-bottom-text">Rooted in Vedic tradition &nbsp;·&nbsp; Powered by modern AI</span>
+          <span className="lp-footer-bottom-text">Made with 🙏 for seekers everywhere</span>
+        </div>
       </footer>
+
+      <LandingScripts />
     </div>
   )
 }

@@ -269,7 +269,7 @@ export async function POST(request: Request) {
     const ashtakoot = calcAshtakoot(chartA, chartB)
 
     // ── Groq AI narrative ────────────────────────────────────────
-    const systemPrompt = `You are Jyotish AI — a warm, wise Vedic astrologer specialising in Kundali Milan (compatibility matching).
+    const systemPrompt = `You are Daivam — a warm, wise Vedic astrologer specialising in Kundali Milan (compatibility matching).
 You speak with calm authority, referencing classical texts like Brihat Parashara Hora Shastra.
 Keep your response to exactly 3 short paragraphs:
 1. Overall compatibility verdict (mention the Ashtakoot score and what it means)

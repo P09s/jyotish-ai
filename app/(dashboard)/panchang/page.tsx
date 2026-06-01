@@ -3,7 +3,9 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/app/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Sun, ArrowLeft, Loader2, MapPin } from 'lucide-react'
+import { Sun, ArrowLeft, Loader2, MapPin, Sparkles, AlertTriangle, HelpCircle } from 'lucide-react'
+import { ThemeToggle } from '@/app/components/ThemeProvider'
+import HelpButton from '@/app/components/HelpButton'
 
 type Muhurta = { start: string; end: string } | null
 type Panchang = {
@@ -51,7 +53,7 @@ function moonEmoji(tithiIndex: number): string {
 // ── Progress bar ──────────────────────────────────────────────────────────────
 function ProgressBar({ pct }: { pct: number }) {
   return (
-    <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, marginTop: 10 }}>
+    <div style={{ height: 3, background: 'var(--bg-surface2)', borderRadius: 2, marginTop: 10 }}>
       <div style={{
         height: '100%', borderRadius: 2,
         width: `${Math.min(100, pct * 100).toFixed(1)}%`,
@@ -73,34 +75,37 @@ function MuhurtaRow({
       padding: '12px 16px', borderRadius: 10,
       background: active
         ? (isGood ? 'rgba(249,115,22,0.1)' : 'rgba(239,68,68,0.08)')
-        : 'rgba(255,255,255,0.02)',
+        : 'var(--bg-surface)',
       border: `1px solid ${active
-        ? (isGood ? 'rgba(249,115,22,0.25)' : 'rgba(239,68,68,0.2)')
-        : 'rgba(255,255,255,0.05)'}`,
+        ? (isGood ? 'var(--orange-border)' : 'rgba(239,68,68,0.2)')
+        : 'var(--border)'}`,
       transition: 'all 0.3s'
     }}>
-      {/* Icon dot */}
+      {/* Icon dot — Increased contrast backgrounds and mapped Lucide icons instead of emojis */}
       <div style={{
-        width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-        background: isGood ? 'rgba(249,115,22,0.1)' : 'rgba(239,68,68,0.08)',
-        border: `1px solid ${isGood ? 'rgba(249,115,22,0.2)' : 'rgba(239,68,68,0.15)'}`,
+        width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: isGood ? 'rgba(249,115,22,0.15)' : 'rgba(239,68,68,0.15)',
+        border: `1px solid ${isGood ? 'rgba(249,115,22,0.25)' : 'rgba(239,68,68,0.25)'}`,
       }}>
-        {isGood ? '✨' : '⚠️'}
+        {isGood 
+          ? <Sparkles size={16} color="var(--orange)" /> 
+          : <AlertTriangle size={16} color="#ef4444" />
+        }
       </div>
 
       {/* Text */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 13, fontWeight: 500,
-          color: active ? (isGood ? '#FDBA74' : '#FCA5A5') : 'var(--text-primary)'
+          color: active ? (isGood ? 'var(--orange)' : '#FCA5A5') : 'var(--text-primary)'
         }}>
           {label}
           {active && (
             <span style={{
               fontSize: 10, marginLeft: 8,
               color: isGood ? 'var(--orange)' : '#F87171',
-              background: isGood ? 'rgba(249,115,22,0.1)' : 'rgba(239,68,68,0.1)',
+              background: isGood ? 'var(--orange-glow)' : 'rgba(239,68,68,0.1)',
               padding: '2px 7px', borderRadius: 100,
             }}>
               active now
@@ -114,7 +119,7 @@ function MuhurtaRow({
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
         {m ? (
           <>
-            <div style={{ fontSize: 13, color: active ? (isGood ? '#FDBA74' : '#FCA5A5') : 'var(--text-secondary)' }}>
+            <div style={{ fontSize: 13, color: active ? (isGood ? 'var(--orange)' : '#FCA5A5') : 'var(--text-secondary)' }}>
               {fmtTime(m.start, tz)}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
@@ -136,7 +141,7 @@ function PanchangCard({
   return (
     <div className="card" style={{ padding: '16px', flex: 1, minWidth: 0 }}>
       <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
-        {label} <span style={{ color: 'rgba(249,115,22,0.5)' }}>· {sanskrit}</span>
+        {label} <span style={{ color: 'var(--orange-dim)' }}>· {sanskrit}</span>
       </p>
       <div style={{ fontSize: emoji ? 22 : 0, marginBottom: emoji ? 4 : 0, lineHeight: 1 }}>{emoji}</div>
       <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: 4 }}>
@@ -187,12 +192,8 @@ export default function PanchangPage() {
         location: profile.place_of_birth,
       })
       
-      console.log('Fetching panchang with params:', Object.fromEntries(params))
-      
       const res = await fetch(`/api/panchang?${params}`)
       const data = await res.json()
-      
-      console.log('Panchang API response:', data)  // ← ADD THIS
       
       if (!res.ok) { 
         setError(`Panchang error: ${data.error}`); 
@@ -218,14 +219,18 @@ export default function PanchangPage() {
         position: 'sticky', top: 0, zIndex: 50,
         padding: '0 28px', height: 60,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(12,12,12,0.85)', backdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--bg-nav)', backdropFilter: 'blur(24px)',
+        borderBottom: '1px solid var(--border)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Sun size={16} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--white)' }}>Jyotish AI</span>
+          <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>Daivam</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <ThemeToggle />
+          <div style={{ cursor: 'pointer' }} title="Help & Info">
+            <HelpButton page="panchang" />
+          </div>
           {p && (
             <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
               <MapPin size={11} strokeWidth={1.5} />
@@ -245,7 +250,7 @@ export default function PanchangPage() {
           <p style={{ fontSize: 11, color: 'var(--orange)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
             Daily Panchang
           </p>
-          <h1 className="serif" style={{ fontSize: 'clamp(26px,4vw,36px)', fontWeight: 600, color: 'var(--white)', marginBottom: 6 }}>
+          <h1 className="serif" style={{ fontSize: 'clamp(26px,4vw,36px)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
             {p ? fmtDate(p.date, tz) : 'Today'}
           </h1>
           {p && (
@@ -325,21 +330,20 @@ export default function PanchangPage() {
             <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
               <div className="card" style={{ flex: 1, padding: '16px' }}>
                 <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
-                  Yoga <span style={{ color: 'rgba(249,115,22,0.5)' }}>· Nityayoga</span>
+                  Yoga <span style={{ color: 'var(--orange-dim)' }}>· Nityayoga</span>
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)' }}>{p.yoga.name}</p>
                   <span style={{
-                    fontSize: 10, padding: '2px 8px', borderRadius: 100,
+                    fontSize: 10, padding: '2px 8px', borderRadius: 100, fontWeight: 500,
+                    // Updated so it remains highly readable on white
                     background: p.yoga.quality === 'auspicious'
-                      ? 'rgba(34,197,94,0.1)' : p.yoga.quality === 'inauspicious'
-                      ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.06)',
-                    color: p.yoga.quality === 'auspicious'
-                      ? '#86EFAC' : p.yoga.quality === 'inauspicious'
-                      ? '#FCA5A5' : 'var(--text-muted)',
+                      ? 'rgba(34,197,94,0.15)' : p.yoga.quality === 'inauspicious'
+                      ? 'rgba(239,68,68,0.15)' : 'var(--bg-surface2)',
+                    color: 'var(--text-primary)',
                     border: `1px solid ${p.yoga.quality === 'auspicious'
-                      ? 'rgba(34,197,94,0.2)' : p.yoga.quality === 'inauspicious'
-                      ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                      ? 'rgba(34,197,94,0.3)' : p.yoga.quality === 'inauspicious'
+                      ? 'rgba(239,68,68,0.3)' : 'var(--border)'}`,
                   }}>
                     {p.yoga.quality}
                   </span>
@@ -349,7 +353,7 @@ export default function PanchangPage() {
 
               <div className="card" style={{ flex: 1, padding: '16px' }}>
                 <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
-                  Karana <span style={{ color: 'rgba(249,115,22,0.5)' }}>· Half-tithi</span>
+                  Karana <span style={{ color: 'var(--orange-dim)' }}>· Half-tithi</span>
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
                   {p.karana.name}
@@ -393,7 +397,7 @@ export default function PanchangPage() {
             <Link href="/chat" style={{ textDecoration: 'none' }}>
               <div style={{
                 padding: '20px 24px', borderRadius: 14, cursor: 'pointer',
-                background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)',
+                background: 'var(--orange-glow)', border: '1px solid var(--orange-border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between'
               }}>
                 <div>

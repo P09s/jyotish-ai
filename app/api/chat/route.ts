@@ -126,7 +126,7 @@ function buildSystemPrompt(profile: any, chart: any): string {
   )
 
   lines.push(
-    `You are Jyotish AI — a warm, wise, and deeply knowledgeable Vedic astrologer.`
+    `You are Daivam — a warm, wise, and deeply knowledgeable Vedic astrologer.`
   )
 
   lines.push(

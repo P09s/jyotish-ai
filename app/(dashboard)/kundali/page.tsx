@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/app/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Sun, ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react'
+import { Sun, ArrowLeft, AlertTriangle, Loader2, HelpCircle } from 'lucide-react'
+import { ThemeToggle } from '@/app/components/ThemeProvider'
 import { MotionDiv } from '@/app/components/motion-wrapper'
 import { motion } from 'framer-motion'
+import HelpButton from '@/app/components/HelpButton'
 
 const PLANETS_ORDER = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu']
 const SYMBOLS: Record<string, string> = {
@@ -26,7 +28,7 @@ const PLANET_COLORS: Record<string, string> = {
 
 function planetColor(abbr: string): string {
   const key = abbr.replace(/[℞ᴿRᴿ]$/, '').slice(0, 2)
-  return PLANET_COLORS[key] ?? 'rgba(249,115,22,0.9)'
+  return PLANET_COLORS[key] ?? 'var(--orange)'
 }
 
 const HOUSE_COLORS: Record<number, string> = {
@@ -34,7 +36,7 @@ const HOUSE_COLORS: Record<number, string> = {
   2:  'rgba(80,200,160,0.9)',
   3:  'rgba(240,160,60,0.9)',
   4:  'rgba(80,140,240,0.9)',
-  5:  'rgba(249,115,22,0.9)',
+  5:  'var(--orange)',
   6:  'rgba(80,200,160,0.9)',
   7:  'rgba(220,80,180,0.9)',
   8:  'rgba(220,80,180,0.9)',
@@ -93,7 +95,7 @@ const SIGN_LABEL_POS: Record<number, [number, number]> = {
 // ── NorthIndianChart component ────────────────────────────────────────────────
 function NorthIndianChart({ chart }: { chart: any }) {
   const lagnaIdx: number = chart?.lagna?.sign_index ?? 0
-  const grid = 'rgba(249,115,22,0.26)'
+  const grid = 'var(--orange-border)'
   const gw = 1.3
 
   const houseMap: Record<number, string[]> = {}
@@ -101,7 +103,6 @@ function NorthIndianChart({ chart }: { chart: any }) {
 
   if (chart?.planets) {
     for (const p of chart.planets) {
-      // ✅ FIX: Use the server's correctly-computed sign_index directly
       const signIdx = p.sign_index
       const houseNum = ((signIdx - lagnaIdx + 12) % 12) + 1
 
@@ -118,14 +119,14 @@ function NorthIndianChart({ chart }: { chart: any }) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       viewBox="0 0 700 560" width="100%" style={{ maxWidth: 580, display: 'block' }}>
-      <rect x="30" y="30" width="640" height="500" rx="3" fill="rgba(249,115,22,0.015)" stroke="rgba(249,115,22,0.42)" strokeWidth="1.6" />
+      <rect x="30" y="30" width="640" height="500" rx="3" fill="var(--bg-surface)" stroke="var(--orange-border)" strokeWidth="1.6" />
       <line x1="30"  y1="30"  x2="670" y2="530" stroke={grid} strokeWidth={gw} />
       <line x1="670" y1="30"  x2="30"  y2="530" stroke={grid} strokeWidth={gw} />
       <polygon points="350,30 670,280 350,530 30,280" fill="none" stroke={grid} strokeWidth={gw} />
 
       {RASHI_INSIDE.map(([x, y, n]) => (
         <text key={`rashi-${n}`} x={x} y={y} textAnchor="middle" dominantBaseline="middle"
-          style={{ fontSize: '13px', fill: 'rgba(250,249,245,0.25)', fontFamily: 'sans-serif', fontWeight: '400' }}>
+          style={{ fontSize: '13px', fill: 'var(--text-muted)', fontFamily: 'sans-serif', fontWeight: '400' }}>
           {n}
         </text>
       ))}
@@ -152,7 +153,7 @@ function NorthIndianChart({ chart }: { chart: any }) {
           <g key={house}>
             <text x={sx} y={sy} textAnchor="middle" dominantBaseline="middle"
               style={{
-                fontSize: '9px', fill: isLagna ? 'rgba(249,115,22,0.75)' : 'rgba(250,249,245,0.22)',
+                fontSize: '9px', fill: isLagna ? 'var(--orange)' : 'var(--text-muted)',
                 fontFamily: 'sans-serif', fontWeight: isLagna ? '600' : '400',
               }}>
               {SIGN_ABBR[signIdx]}
@@ -166,12 +167,12 @@ function NorthIndianChart({ chart }: { chart: any }) {
             {isLagna && (
               <>
                 <text x={cx} y={cy - 16} textAnchor="middle" dominantBaseline="middle"
-                  style={{ fontSize: '8px', fill: 'rgba(249,115,22,0.5)', fontFamily: 'sans-serif', letterSpacing: '0.08em' }}>
+                  style={{ fontSize: '8px', fill: 'var(--orange-dim)', fontFamily: 'sans-serif', letterSpacing: '0.08em' }}>
                   ASC ↑
                 </text>
                 {planets.length === 0 && (
                   <text x={cx} y={cy + 8} textAnchor="middle" dominantBaseline="middle"
-                    style={{ fontSize: '17px', fontFamily: 'Georgia,serif', fontWeight: '600', fill: 'rgba(249,115,22,0.85)' }}>
+                    style={{ fontSize: '17px', fontFamily: 'Georgia,serif', fontWeight: '600', fill: 'var(--orange)' }}>
                     Asc
                   </text>
                 )}
@@ -241,7 +242,6 @@ export default function KundaliPage() {
         }),
       })
       
-      // ✅ FIX: Actually read and display the backend error!
       if (!calcRes.ok) { 
         const errData = await calcRes.json().catch(() => ({}))
         setError(`Backend Error: ${errData.error || 'Chart calculation failed'}`)
@@ -267,21 +267,25 @@ export default function KundaliPage() {
       <nav style={{
         position: 'sticky', top: 0, zIndex: 50, padding: '0 28px', height: 60,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(12,12,12,0.85)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--bg-nav)', backdropFilter: 'blur(24px)', borderBottom: '1px solid var(--border)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Sun size={16} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--white)' }}>Jyotish AI</span>
+          <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>Daivam</span>
         </div>
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
-          <ArrowLeft size={14} strokeWidth={1.5} /> Dashboard
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <ThemeToggle />
+          <HelpButton page="kundali" />
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
+            <ArrowLeft size={14} strokeWidth={1.5} /> Dashboard
+          </Link>
+        </div>
       </nav>
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '44px 24px 80px', position: 'relative', zIndex: 1 }}>
         <div style={{ marginBottom: 36 }}>
           <p style={{ fontSize: 11, color: 'var(--orange)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Vedic Chart</p>
-          <h1 className="serif" style={{ fontSize: 'clamp(28px,4vw,38px)', fontWeight: 600, color: 'var(--white)', marginBottom: 6 }}>
+          <h1 className="serif" style={{ fontSize: 'clamp(28px,4vw,38px)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
             {profile?.full_name ? `${profile.full_name}'s Kundali` : 'Your Kundali'}
           </h1>
           {profile?.date_of_birth && (
@@ -295,9 +299,9 @@ export default function KundaliPage() {
 
         {!loading && !isComplete && (
           <div style={{ padding: '20px 24px', borderRadius: 14, marginBottom: 32, background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-            <AlertTriangle size={18} color="#FDBA74" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
+            <AlertTriangle size={18} color="var(--orange)" strokeWidth={1.5} style={{ flexShrink: 0, marginTop: 1 }} />
             <div>
-              <p style={{ fontSize: 14, color: '#FDBA74', marginBottom: 6 }}>Birth details incomplete</p>
+              <p style={{ fontSize: 14, color: 'var(--orange)', marginBottom: 6 }}>Birth details incomplete</p>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 14 }}>Date, time, and place of birth are needed to calculate your chart.</p>
               <Link href="/profile">
                 <button className="btn-primary" style={{ fontSize: 13, padding: '8px 20px' }}>Complete profile →</button>
@@ -332,7 +336,7 @@ export default function KundaliPage() {
                   Lagna Chart (North Indian)
                 </p>
                 {chart?.lagna && (
-                  <span style={{ fontSize: 11, color: 'rgba(249,115,22,0.8)', padding: '3px 10px', borderRadius: 100, border: '1px solid rgba(249,115,22,0.2)' }}>
+                  <span style={{ fontSize: 11, color: 'var(--orange)', padding: '3px 10px', borderRadius: 100, border: '1px solid var(--orange-border)' }}>
                     {chart.lagna.sign} Lagna · {Number(chart.lagna.degree).toFixed(1)}°
                   </span>
                 )}
@@ -360,7 +364,7 @@ export default function KundaliPage() {
                 ['Nakshatra', chart.summary.moon_nakshatra],
                 ['Dasha Now', currentDasha ? `${currentDasha.lord} till ${currentDasha.end?.slice(0, 7)}` : '—'],
               ] as [string, string][]).map(([label, value], idx) => (
-                <div key={label} style={{ padding: '8px 20px 8px 0', marginRight: idx < 4 ? 20 : 0, borderRight: idx < 4 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                <div key={label} style={{ padding: '8px 20px 8px 0', marginRight: idx < 4 ? 20 : 0, borderRight: idx < 4 ? '1px solid var(--border)' : 'none' }}>
                   <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>{label}</p>
                   <p style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{value}</p>
                 </div>
@@ -373,7 +377,7 @@ export default function KundaliPage() {
           <div className="card" style={{ padding: '24px', marginBottom: 20 }}>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>Planetary Positions</p>
 
-            <div style={{ display: 'flex', alignItems: 'center', padding: '0 0 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 0 10px', borderBottom: '1px solid var(--border)', marginBottom: 2 }}>
               <div style={{ width: 40, flexShrink: 0 }} />
               <div style={{ flex: 1, paddingLeft: 4 }}>
                 <span style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Planet</span>
@@ -387,18 +391,17 @@ export default function KundaliPage() {
               const p = planetMap[name]
               let displayHouse = p?.house
               if (p && chart?.lagna) {
-                // ✅ FIX: Directly use the server's sign_index for display calculation too
                 displayHouse = ((p.sign_index - chart.lagna.sign_index + 12) % 12) + 1
               }
               return (
-                <div key={name} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: i < PLANETS_ORDER.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                  <div style={{ width: 40, height: 36, borderRadius: 9, flexShrink: 0, background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--orange)', fontFamily: 'serif' }}>
+                <div key={name} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: i < PLANETS_ORDER.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <div style={{ width: 40, height: 36, borderRadius: 9, flexShrink: 0, background: 'var(--orange-glow)', border: '1px solid var(--orange-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--orange)', fontFamily: 'serif' }}>
                     {SYMBOLS[name]}
                   </div>
                   <div style={{ flex: 1, paddingLeft: 12 }}>
                     <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{name}</span>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 7 }}>{SANSKRIT[name]}</span>
-                    {p?.isRetrograde && <span style={{ fontSize: 10, color: 'rgba(249,115,22,0.65)', marginLeft: 5 }}>R</span>}
+                    {p?.isRetrograde && <span style={{ fontSize: 10, color: 'var(--orange-dim)', marginLeft: 5 }}>R</span>}
                   </div>
                   <span style={{ fontSize: 12, color: p ? 'var(--text-primary)' : 'var(--text-muted)', width: 90, fontStyle: p ? 'normal' : 'italic' }}>
                     {p ? p.sign : (isComplete ? '—' : 'No data')}
@@ -408,7 +411,7 @@ export default function KundaliPage() {
                   </span>
                   {p ? (
                     <div style={{ width: 36, display: 'flex', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 10, color: 'rgba(249,115,22,0.85)', background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 6, padding: '2px 5px' }}>
+                      <span style={{ fontSize: 10, color: 'var(--orange)', background: 'var(--orange-glow)', border: '1px solid var(--orange-border)', borderRadius: 6, padding: '2px 5px' }}>
                         H{displayHouse}
                       </span>
                     </div>
@@ -438,13 +441,13 @@ export default function KundaliPage() {
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: '10px 14px', borderRadius: isCur ? '10px 10px 0 0' : 10,
-                      background: isCur ? 'rgba(249,115,22,0.1)' : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${isCur ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.05)'}`,
+                      background: isCur ? 'var(--orange-glow)' : 'var(--bg-surface)',
+                      border: `1px solid ${isCur ? 'var(--orange-border)' : 'var(--border)'}`,
                       borderBottom: isCur ? 'none' : undefined,
                     }}>
                       <div style={{
                         width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                        background: isCur ? 'var(--orange)' : 'rgba(255,255,255,0.12)'
+                        background: isCur ? 'var(--orange)' : 'var(--border2)'
                       }} />
                       <span style={{
                         flex: 1, fontSize: 13, fontWeight: isCur ? 500 : 400,
@@ -466,8 +469,8 @@ export default function KundaliPage() {
                     {isCur && d.antardashas?.length > 0 && (
                       <div style={{
                         padding: '8px 10px 10px',
-                        background: 'rgba(249,115,22,0.04)',
-                        border: '1px solid rgba(249,115,22,0.15)',
+                        background: 'var(--bg-surface2)',
+                        border: '1px solid var(--orange-border)',
                         borderTop: 'none', borderRadius: '0 0 10px 10px',
                         display: 'flex', flexDirection: 'column', gap: 3
                       }}>
@@ -500,10 +503,10 @@ export default function KundaliPage() {
                               display: 'flex', alignItems: 'center', gap: 8,
                               padding: '7px 8px', borderRadius: 7,
                               background: isAdCur
-                                ? 'rgba(249,115,22,0.12)'
+                                ? 'var(--orange-glow)'
                                 : 'transparent',
                               border: isAdCur
-                                ? '1px solid rgba(249,115,22,0.2)'
+                                ? '1px solid var(--orange-border)'
                                 : '1px solid transparent',
                             }}>
                               {/* Status dot */}
@@ -512,17 +515,17 @@ export default function KundaliPage() {
                                 background: isAdCur
                                   ? 'var(--orange)'
                                   : isPast
-                                  ? 'rgba(255,255,255,0.2)'
-                                  : 'rgba(255,255,255,0.08)'
+                                  ? 'var(--text-muted)'
+                                  : 'var(--border2)'
                               }} />
 
                               {/* Label */}
                               <span style={{
                                 flex: 1, fontSize: 12,
                                 color: isAdCur
-                                  ? '#FDBA74'
+                                  ? 'var(--orange)'
                                   : isPast
-                                  ? 'rgba(255,255,255,0.3)'
+                                  ? 'var(--text-muted)'
                                   : 'var(--text-secondary)',
                                 fontWeight: isAdCur ? 500 : 400
                               }}>
@@ -541,8 +544,8 @@ export default function KundaliPage() {
                               <span style={{
                                 fontSize: 11, flexShrink: 0,
                                 color: isAdCur
-                                  ? 'rgba(253,186,116,0.7)'
-                                  : 'rgba(255,255,255,0.2)'
+                                  ? 'var(--orange-dim)'
+                                  : 'var(--text-hint)'
                               }}>
                                 {ad.start?.slice(0, 7)} – {ad.end?.slice(0, 7)}
                               </span>
@@ -560,12 +563,12 @@ export default function KundaliPage() {
             {chart.summary?.current_antardasha_lord && (
               <div style={{
                 marginTop: 14, padding: '8px 14px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
                 fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6
               }}>
                 Currently in{' '}
-                <span style={{ color: '#FDBA74' }}>
+                <span style={{ color: 'var(--orange)' }}>
                   {chart.summary.current_dasha_lord}/{chart.summary.current_antardasha_lord} Antardasha
                 </span>
                 {' '}ending{' '}
@@ -579,7 +582,7 @@ export default function KundaliPage() {
 
         {isComplete && !loading && (
           <Link href="/chat" style={{ textDecoration: 'none' }}>
-            <div style={{ padding: '20px 24px', borderRadius: 14, cursor: 'pointer', background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '20px 24px', borderRadius: 14, cursor: 'pointer', background: 'var(--orange-glow)', border: '1px solid var(--orange-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>Ask your AI Astrologer</p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Get personalised Jyotish insights based on your chart</p>

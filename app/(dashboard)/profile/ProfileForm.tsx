@@ -169,8 +169,8 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
       {loading && status && (
         <div style={{
           padding: '10px 16px', marginBottom: 20, borderRadius: 10,
-          background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)',
-          color: '#FDBA74', fontSize: 13, display: 'flex', alignItems: 'center', gap: 10
+          background: 'var(--orange-glow)', border: '1px solid var(--orange-border)',
+          color: 'var(--orange)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 10
         }}>
           <Loader2 size={13} strokeWidth={2} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
           {status}
@@ -314,7 +314,7 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
           {/* Info note */}
           <div style={{
             marginTop: 14, padding: '10px 14px', borderRadius: 10,
-            background: 'rgba(249,115,22,0.04)', border: '1px solid rgba(249,115,22,0.1)'
+            background: 'var(--orange-glow)', border: '1px solid var(--orange-border)'
           }}>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.65, margin: 0 }}>
               ☉ Time of birth determines your Ascendant (Lagna). Even a 10-minute difference can change your rising sign. Your birth place is geocoded to precise coordinates for accurate calculations.

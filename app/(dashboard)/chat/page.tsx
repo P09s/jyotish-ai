@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Sun, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import ChatLayout from './ChatLayout'
+import { ThemeToggle } from '@/app/components/ThemeProvider'
 
 export default async function ChatPage() {
   const supabase = await createClient()
@@ -42,14 +43,15 @@ export default async function ChatPage() {
       <nav style={{
         flexShrink: 0, zIndex: 50, padding: '0 20px', height: 56,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(12,12,12,0.9)', backdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'relative'
+        background: 'var(--bg-nav)', backdropFilter: 'blur(24px)',
+        borderBottom: '1px solid var(--border)', position: 'relative'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Sun size={15} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize: 16, fontWeight: 600, color: 'var(--white)' }}>Jyotish AI</span>
+          <span className="serif" style={{ fontSize: 16, fontWeight: 600, color: 'var(--white)' }}>Daivam</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <ThemeToggle />
           <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
             AI Astrologer online

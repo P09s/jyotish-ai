@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/app/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Sun, ArrowLeft, Loader2 } from 'lucide-react'
+import { Sun, ArrowLeft, Loader2, HelpCircle } from 'lucide-react'
+import { ThemeToggle } from '@/app/components/ThemeProvider'
+import HelpButton from '@/app/components/HelpButton'
 
 type CurPos  = { sign: string; sign_index: number; degree: number; isRetrograde: boolean }
 type NatPos  = { sign: string; sign_index: number; degree: number; house: number }
@@ -16,10 +18,12 @@ const PLANET_COLOR: Record<string,string> = {
   Sun:'#FCD34D', Moon:'#93C5FD', Mars:'#F87171', Mercury:'#6EE7B7',
   Jupiter:'#FDE68A', Venus:'#C4B5FD', Saturn:'#94A3B8', Rahu:'#FB923C', Ketu:'#A3A3A3',
 }
+
+// Swapped faint color tags to standard text colors so they appear solid on white backgrounds
 const SEV: Record<string,{bg:string;border:string;dot:string;color:string}> = {
-  positive:    { bg:'rgba(34,197,94,0.07)',  border:'rgba(34,197,94,0.2)',  dot:'#22c55e', color:'#86EFAC' },
-  caution:     { bg:'rgba(234,179,8,0.07)',  border:'rgba(234,179,8,0.2)',  dot:'#eab308', color:'#FDE047' },
-  challenging: { bg:'rgba(239,68,68,0.07)',  border:'rgba(239,68,68,0.2)',  dot:'#ef4444', color:'#FCA5A5' },
+  positive:    { bg:'rgba(34,197,94,0.1)',  border:'rgba(34,197,94,0.3)',  dot:'#22c55e', color:'var(--text-primary)' },
+  caution:     { bg:'rgba(234,179,8,0.1)',  border:'rgba(234,179,8,0.3)',  dot:'#eab308', color:'var(--text-primary)' },
+  challenging: { bg:'rgba(239,68,68,0.1)',  border:'rgba(239,68,68,0.3)',  dot:'#ef4444', color:'var(--text-primary)' },
 }
 
 const ASPECT_LABEL: Record<number,string> = { 3:'3rd', 4:'4th', 5:'5th', 7:'7th', 8:'8th', 9:'9th', 10:'10th' }
@@ -53,16 +57,22 @@ export default function TransitsPage() {
       <nav style={{
         position:'sticky', top:0, zIndex:50, padding:'0 28px', height:60,
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        background:'rgba(12,12,12,0.85)', backdropFilter:'blur(24px)',
-        borderBottom:'1px solid rgba(255,255,255,0.06)',
+        background:'var(--bg-nav)', backdropFilter:'blur(24px)',
+        borderBottom:'1px solid var(--border)',
       }}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <Sun size={16} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize:17, fontWeight:600, color:'var(--white)' }}>Jyotish AI</span>
+          <span className="serif" style={{ fontSize:17, fontWeight:600, color:'var(--text-primary)' }}>Daivam</span>
         </div>
-        <Link href="/dashboard" style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color:'var(--text-secondary)', textDecoration:'none' }}>
-          <ArrowLeft size={14} strokeWidth={1.5} /> Dashboard
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <ThemeToggle />
+          <span title="Help & Info">
+          <HelpButton page="transits" />
+          </span>
+          <Link href="/dashboard" style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color:'var(--text-secondary)', textDecoration:'none' }}>
+            <ArrowLeft size={14} strokeWidth={1.5} /> Dashboard
+          </Link>
+        </div>
       </nav>
 
       <div style={{ maxWidth:680, margin:'0 auto', padding:'44px 24px 80px', position:'relative', zIndex:1 }}>
@@ -72,7 +82,7 @@ export default function TransitsPage() {
           <p style={{ fontSize:11, color:'var(--orange)', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>
             Planetary Transits
           </p>
-          <h1 className="serif" style={{ fontSize:'clamp(26px,4vw,36px)', fontWeight:600, color:'var(--white)', marginBottom:6 }}>
+          <h1 className="serif" style={{ fontSize:'clamp(26px,4vw,36px)', fontWeight:600, color:'var(--text-primary)', marginBottom:6 }}>
             {t ? new Date(t.date+'T12:00:00').toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) : 'Today'}
           </h1>
           {t && (
@@ -114,8 +124,8 @@ export default function TransitsPage() {
                       <div key={s.type} style={{ padding:'16px 18px', borderRadius:12, background:st.bg, border:`1px solid ${st.border}`, display:'flex', gap:14, alignItems:'flex-start' }}>
                         <div style={{ width:8, height:8, borderRadius:'50%', background:st.dot, flexShrink:0, marginTop:5 }} />
                         <div>
-                          <p style={{ fontSize:13, fontWeight:500, color:st.color, marginBottom:5 }}>{s.label}</p>
-                          <p style={{ fontSize:12, color:'var(--text-muted)', lineHeight:1.65 }}>{s.description}</p>
+                          <p style={{ fontSize:14, fontWeight:500, color:st.color, marginBottom:5 }}>{s.label}</p>
+                          <p style={{ fontSize:13, color:'var(--text-secondary)', lineHeight:1.65 }}>{s.description}</p>
                         </div>
                       </div>
                     )
@@ -130,7 +140,7 @@ export default function TransitsPage() {
             </p>
             <div className="card" style={{ padding:0, marginBottom:20, overflow:'hidden' }}>
               {/* Header row */}
-              <div style={{ display:'grid', gridTemplateColumns:'140px 1fr 36px 1fr', padding:'9px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)', background:'rgba(255,255,255,0.02)' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'140px 1fr 36px 1fr', padding:'9px 16px', borderBottom:'1px solid var(--border)', background:'var(--bg-surface)' }}>
                 {['Planet','Now','H','Natal'].map(h => (
                   <span key={h} style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{h}</span>
                 ))}
@@ -145,8 +155,8 @@ export default function TransitsPage() {
                   <div key={p.name} style={{
                     display:'grid', gridTemplateColumns:'140px 1fr 36px 1fr',
                     padding:'11px 16px', alignItems:'center',
-                    borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)',
-                    background: p.conjunct_natal.length > 0 ? 'rgba(249,115,22,0.03)' : 'transparent',
+                    borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                    background: p.conjunct_natal.length > 0 ? 'var(--orange-glow)' : 'transparent',
                   }}>
                     {/* Name */}
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -154,7 +164,7 @@ export default function TransitsPage() {
                       <div>
                         <span style={{ fontSize:13, color:'var(--text-primary)' }}>{p.name}</span>
                         {p.current.isRetrograde && (
-                          <span style={{ fontSize:10, color:'rgba(249,115,22,0.7)', marginLeft:4 }}>℞</span>
+                          <span style={{ fontSize:10, color:'var(--orange-dim)', marginLeft:4 }}>℞</span>
                         )}
                         <div style={{ fontSize:10, color:'var(--text-muted)' }}>{p.sanskrit}</div>
                       </div>
@@ -162,14 +172,14 @@ export default function TransitsPage() {
 
                     {/* Current */}
                     <div>
-                      <span style={{ fontSize:13, color: moved ? '#FDBA74' : 'var(--text-secondary)', fontWeight: moved ? 500 : 400 }}>
+                      <span style={{ fontSize:13, color: moved ? 'var(--orange)' : 'var(--text-secondary)', fontWeight: moved ? 500 : 400 }}>
                         {p.current.sign}
                       </span>
                       <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:4 }}>
                         {p.current.degree.toFixed(0)}°
                       </span>
                       {p.conjunct_natal.length > 0 && (
-                        <div style={{ fontSize:10, color:'rgba(249,115,22,0.65)', marginTop:2 }}>
+                        <div style={{ fontSize:10, color:'var(--orange-dim)', marginTop:2 }}>
                           near natal {p.conjunct_natal.slice(0,2).join(', ')}
                         </div>
                       )}
@@ -180,8 +190,8 @@ export default function TransitsPage() {
                       display:'inline-flex', alignItems:'center', justifyContent:'center',
                       fontSize:10, fontWeight:500, padding:'2px 5px', borderRadius:5,
                       color: p.transit_house !== p.natal.house ? 'var(--orange)' : 'var(--text-muted)',
-                      background: p.transit_house !== p.natal.house ? 'rgba(249,115,22,0.1)' : 'rgba(255,255,255,0.04)',
-                      border:`1px solid ${p.transit_house !== p.natal.house ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.07)'}`,
+                      background: p.transit_house !== p.natal.house ? 'var(--orange-glow)' : 'var(--bg-surface2)',
+                      border:`1px solid ${p.transit_house !== p.natal.house ? 'var(--orange-border)' : 'var(--border)'}`,
                     }}>
                       H{p.transit_house}
                     </span>
@@ -189,7 +199,7 @@ export default function TransitsPage() {
                     {/* Natal */}
                     <div>
                       <span style={{ fontSize:12, color:'var(--text-muted)' }}>{p.natal.sign}</span>
-                      <span style={{ fontSize:11, color:'rgba(255,255,255,0.2)', marginLeft:4 }}>
+                      <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:4 }}>
                         {p.natal.degree.toFixed(0)}° · H{p.natal.house}
                       </span>
                     </div>
@@ -207,28 +217,28 @@ export default function TransitsPage() {
                 <div className="card" style={{ padding:'4px 16px', marginBottom:24 }}>
                   {t.aspects.map((a, i) => {
                     const tc = PLANET_COLOR[a.transit_planet] ?? 'var(--orange)'
-                    const nc = PLANET_COLOR[a.natal_planet]   ?? 'rgba(255,255,255,0.4)'
+                    const nc = PLANET_COLOR[a.natal_planet]   ?? 'var(--text-muted)'
                     return (
                       <div key={`${a.transit_planet}-${a.natal_planet}-${i}`} style={{
                         display:'flex', alignItems:'center', gap:8, padding:'10px 0',
-                        borderBottom: i < t.aspects.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                        borderBottom: i < t.aspects.length-1 ? '1px solid var(--border)' : 'none',
                         flexWrap:'wrap',
                       }}>
                         <span style={{ fontSize:15, color:tc, fontFamily:'serif' }}>{a.transit_symbol}</span>
                         <span style={{ fontSize:12, color:'var(--text-secondary)', flex:1, minWidth:80 }}>
                           Transit {a.transit_planet}
                         </span>
-                        <span style={{ fontSize:11, padding:'1px 8px', borderRadius:5, background:'rgba(255,255,255,0.05)', color:'var(--text-muted)', border:'1px solid rgba(255,255,255,0.07)' }}>
+                        <span style={{ fontSize:11, padding:'1px 8px', borderRadius:5, background:'var(--bg-surface2)', color:'var(--text-muted)', border:'1px solid var(--border)' }}>
                           {ASPECT_LABEL[a.aspect_num] ?? `${a.aspect_num}th`} aspect
                         </span>
-                        <span style={{ fontSize:11, color:'rgba(255,255,255,0.25)' }}>→</span>
+                        <span style={{ fontSize:11, color:'var(--text-muted)' }}>→</span>
                         <span style={{ fontSize:15, color:nc, fontFamily:'serif' }}>
                           {t.planets.find(p=>p.name===a.natal_planet)?.symbol}
                         </span>
                         <span style={{ fontSize:12, color:'var(--text-muted)' }}>
                           Natal {a.natal_planet}
                         </span>
-                        <span style={{ fontSize:10, padding:'1px 6px', borderRadius:4, background:'rgba(249,115,22,0.08)', color:'rgba(249,115,22,0.7)', border:'1px solid rgba(249,115,22,0.15)' }}>
+                        <span style={{ fontSize:10, padding:'1px 6px', borderRadius:4, background:'var(--orange-glow)', color:'var(--orange)', border:'1px solid var(--orange-border)' }}>
                           H{a.natal_house}
                         </span>
                       </div>
@@ -242,7 +252,7 @@ export default function TransitsPage() {
             <Link href="/chat" style={{ textDecoration:'none' }}>
               <div style={{
                 padding:'20px 24px', borderRadius:14, cursor:'pointer',
-                background:'rgba(249,115,22,0.06)', border:'1px solid rgba(249,115,22,0.2)',
+                background:'var(--orange-glow)', border:'1px solid var(--orange-border)',
                 display:'flex', alignItems:'center', justifyContent:'space-between'
               }}>
                 <div>
