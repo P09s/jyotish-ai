@@ -450,7 +450,7 @@ export default function KundaliPage() {
             <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>Planetary Positions</p>
 
             {isMobile ? (
-              // Mobile View: Stacked Flex blocks to prevent merging
+              // Mobile View: Stacked Flex blocks with forced Wrap to prevent breakout
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {PLANETS_ORDER.map((name) => {
                   const p = planetMap[name]
@@ -460,16 +460,16 @@ export default function KundaliPage() {
                   }
                   
                   return (
-                    <div key={name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'var(--bg-surface2)', borderRadius: 12, border: '1px solid var(--border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div key={name} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '8px 12px', padding: '12px', background: 'var(--bg-surface2)', borderRadius: 12, border: '1px solid var(--border)', boxSizing: 'border-box' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                         <div style={{ width: 36, height: 36, borderRadius: 9, flexShrink: 0, background: 'var(--orange-glow)', border: '1px solid var(--orange-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--orange)', fontFamily: 'serif' }}>
                           {SYMBOLS[name]}
                         </div>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 2 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 2, wordBreak: 'break-word' }}>
                             {name} {p?.isRetrograde && <span style={{ fontSize: 10, color: 'var(--orange-dim)' }}>(R)</span>}
                           </div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', wordBreak: 'break-word' }}>
                             {p ? p.sign : 'No data'} • {p ? `${Number(p.degree).toFixed(0)}°` : ''}
                           </div>
                         </div>
@@ -477,7 +477,7 @@ export default function KundaliPage() {
                       
                       {p && (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--orange)', background: 'var(--orange-glow)', border: '1px solid var(--orange-border)', borderRadius: 6, padding: '4px 8px' }}>
+                           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--orange)', background: 'var(--orange-glow)', border: '1px solid var(--orange-border)', borderRadius: 6, padding: '4px 8px', whiteSpace: 'nowrap' }}>
                             H{displayHouse}
                           </span>
                         </div>
@@ -550,7 +550,7 @@ export default function KundaliPage() {
                 const curAD = d.antardashas?.find((ad: any) => ad.isCurrent)
 
                 return (
-                  <div key={d.lord + d.start}>
+                  <div key={d.lord + d.start} style={{ boxSizing: 'border-box' }}>
 
                     {/* ── Mahadasha row ──────────────────────────────────── */}
                     <div style={{
@@ -563,26 +563,27 @@ export default function KundaliPage() {
                       background: isCur ? 'var(--orange-glow)' : 'var(--bg-surface)',
                       border: `1px solid ${isCur ? 'var(--orange-border)' : 'var(--border)'}`,
                       borderBottom: isCur ? 'none' : undefined,
+                      boxSizing: 'border-box',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0 }}>
                         <div style={{
                           width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
                           background: isCur ? 'var(--orange)' : 'var(--border2)'
                         }} />
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '4px 12px', minWidth: 0 }}>
                           <span style={{
                             fontSize: 14, fontWeight: isCur ? 600 : 500,
-                            color: isCur ? 'var(--text-primary)' : 'var(--text-muted)'
+                            color: isCur ? 'var(--text-primary)' : 'var(--text-muted)',
+                            wordBreak: 'break-word',
                           }}>
                             {d.lord} Mahadasha
                             {isCur && !isMobile && (
-                              <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 8 }}>
+                              <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 8, whiteSpace: 'nowrap' }}>
                                 ← current
                               </span>
                             )}
                           </span>
-                          {/* Duration pushed to right */}
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                             {d.start?.slice(0, 7)} – {d.end?.slice(0, 7)}
                           </span>
                         </div>
@@ -601,7 +602,8 @@ export default function KundaliPage() {
                         background: 'var(--bg-surface2)',
                         border: '1px solid var(--orange-border)',
                         borderTop: 'none', borderRadius: '0 0 10px 10px',
-                        display: 'flex', flexDirection: 'column', gap: 3
+                        display: 'flex', flexDirection: 'column', gap: 3,
+                        boxSizing: 'border-box',
                       }}>
                         {/* Column headers */}
                         <div style={{
@@ -616,8 +618,7 @@ export default function KundaliPage() {
                           </span>
                           <span style={{
                             fontSize: 10, color: 'var(--text-muted)',
-                            textTransform: 'uppercase', letterSpacing: '0.08em',
-                            flexShrink: 0
+                            textTransform: 'uppercase', letterSpacing: '0.08em'
                           }}>
                             Duration
                           </span>
@@ -628,7 +629,7 @@ export default function KundaliPage() {
                           const isPast   = new Date(ad.end) < new Date()
                           return (
                             <div key={ad.lord + ad.start} style={{
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                              display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '4px 8px',
                               padding: '8px', borderRadius: 8,
                               background: isAdCur
                                 ? 'var(--orange-glow)'
@@ -636,8 +637,9 @@ export default function KundaliPage() {
                               border: isAdCur
                                 ? '1px solid var(--orange-border)'
                                 : '1px solid transparent',
+                              boxSizing: 'border-box',
                             }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                                 {/* Status dot */}
                                 <div style={{
                                   width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
@@ -656,13 +658,14 @@ export default function KundaliPage() {
                                     : isPast
                                     ? 'var(--text-muted)'
                                     : 'var(--text-secondary)',
-                                  fontWeight: isAdCur ? 600 : 400
+                                  fontWeight: isAdCur ? 600 : 400,
+                                  wordBreak: 'break-word',
                                 }}>
                                   {d.lord}/{ad.lord}
                                   {isAdCur && (
                                     <span style={{
                                       fontSize: 10, color: 'var(--orange)',
-                                      marginLeft: 6, opacity: 0.8
+                                      marginLeft: 6, opacity: 0.8, whiteSpace: 'nowrap'
                                     }}>
                                       now
                                     </span>
@@ -672,10 +675,11 @@ export default function KundaliPage() {
 
                               {/* Date range */}
                               <span style={{
-                                fontSize: 12, flexShrink: 0,
+                                fontSize: 12, 
                                 color: isAdCur
                                   ? 'var(--orange-dim)'
-                                  : 'var(--text-hint)'
+                                  : 'var(--text-hint)',
+                                whiteSpace: 'nowrap'
                               }}>
                                 {ad.start?.slice(0, 7)} – {ad.end?.slice(0, 7)}
                               </span>
@@ -724,6 +728,7 @@ export default function KundaliPage() {
 
       </div>
 
+      {/* Render Portal directly to body for true viewport positioning */}
       {mounted && typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {isChartExpanded && chart && isMobile && (
