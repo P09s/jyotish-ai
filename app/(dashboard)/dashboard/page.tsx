@@ -33,7 +33,7 @@ export default async function DashboardPage() {
     { href: '/kundali', tag: 'Chart', title: 'View Kundali', desc: 'Lagna chart, planetary positions & all 12 houses', iconName: 'star' as const },
     { href: '/panchang', tag: 'Today', title: 'Daily Panchang', desc: 'Tithi, nakshatra & auspicious timings', iconName: 'sun' as const },
     { href: '/transits', tag: 'Live', title: 'Transits', desc: "Today's planets over your natal chart", iconName: 'globe' as const },
-    { href: '/milan', tag: 'Gunn', title: 'Kundali Matching', desc: 'Check compatibility with your partner', iconName: 'heart' as const },
+    { href: '/milan', tag: 'Love', title: 'Kundali Matching', desc: 'Check compatibility with your partner', iconName: 'heart' as const },
     { href: '/profile', tag: 'Profile', title: 'Edit Profile', desc: 'Update birth details or personal info', iconName: 'user' as const },
   ]
 

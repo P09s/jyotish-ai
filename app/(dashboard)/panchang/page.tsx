@@ -53,7 +53,7 @@ function moonEmoji(tithiIndex: number): string {
 // ── Progress bar ──────────────────────────────────────────────────────────────
 function ProgressBar({ pct }: { pct: number }) {
   return (
-    <div style={{ height: 3, background: 'var(--bg-surface2)', borderRadius: 2, marginTop: 10 }}>
+    <div style={{ height: 4, background: 'var(--bg-surface2)', borderRadius: 2, marginTop: 12 }}>
       <div style={{
         height: '100%', borderRadius: 2,
         width: `${Math.min(100, pct * 100).toFixed(1)}%`,
@@ -72,7 +72,7 @@ function MuhurtaRow({
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 14,
-      padding: '12px 16px', borderRadius: 10,
+      padding: '14px 16px', borderRadius: 14,
       background: active
         ? (isGood ? 'rgba(249,115,22,0.1)' : 'rgba(239,68,68,0.08)')
         : 'var(--bg-surface)',
@@ -81,9 +81,8 @@ function MuhurtaRow({
         : 'var(--border)'}`,
       transition: 'all 0.3s'
     }}>
-      {/* Icon dot — Increased contrast backgrounds and mapped Lucide icons instead of emojis */}
       <div style={{
-        width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: isGood ? 'rgba(249,115,22,0.15)' : 'rgba(239,68,68,0.15)',
         border: `1px solid ${isGood ? 'rgba(249,115,22,0.25)' : 'rgba(239,68,68,0.25)'}`,
@@ -94,10 +93,9 @@ function MuhurtaRow({
         }
       </div>
 
-      {/* Text */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 13, fontWeight: 500,
+          fontSize: 14, fontWeight: 500,
           color: active ? (isGood ? 'var(--orange)' : '#FCA5A5') : 'var(--text-primary)'
         }}>
           {label}
@@ -106,23 +104,22 @@ function MuhurtaRow({
               fontSize: 10, marginLeft: 8,
               color: isGood ? 'var(--orange)' : '#F87171',
               background: isGood ? 'var(--orange-glow)' : 'rgba(239,68,68,0.1)',
-              padding: '2px 7px', borderRadius: 100,
+              padding: '2px 8px', borderRadius: 100,
             }}>
               active now
             </span>
           )}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{sublabel}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{sublabel}</div>
       </div>
 
-      {/* Times */}
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
         {m ? (
           <>
-            <div style={{ fontSize: 13, color: active ? (isGood ? 'var(--orange)' : '#FCA5A5') : 'var(--text-secondary)' }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: active ? (isGood ? 'var(--orange)' : '#FCA5A5') : 'var(--text-secondary)' }}>
               {fmtTime(m.start, tz)}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
               → {fmtTime(m.end, tz)}
             </div>
           </>
@@ -134,21 +131,62 @@ function MuhurtaRow({
   )
 }
 
-// ── Panchang element card ─────────────────────────────────────────────────────
+// ── Adaptable Panchang Element Card ───────────────────────────────────────────
 function PanchangCard({
-  label, sanskrit, value, sub, pct, emoji
-}: { label: string; sanskrit: string; value: string; sub: string; pct?: number; emoji?: string }) {
+  label, sanskrit, value, sub, pct, emoji, horizontal, badge
+}: { 
+  label: string; sanskrit: string; value: string; sub: string; 
+  pct?: number; emoji?: string; horizontal?: boolean;
+  badge?: { text: string; type: 'positive' | 'negative' | 'neutral' }
+}) {
+  const badgeEl = badge && (
+    <span style={{
+      fontSize: 10, padding: '2px 8px', borderRadius: 100, fontWeight: 600, marginLeft: 8, textTransform: 'lowercase',
+      background: badge.type === 'positive' ? 'rgba(34,197,94,0.15)' : badge.type === 'negative' ? 'rgba(239,68,68,0.15)' : 'var(--bg-surface2)',
+      color: badge.type === 'positive' ? '#22c55e' : badge.type === 'negative' ? '#ef4444' : 'var(--text-primary)',
+      border: `1px solid ${badge.type === 'positive' ? 'rgba(34,197,94,0.3)' : badge.type === 'negative' ? 'rgba(239,68,68,0.3)' : 'var(--border)'}`,
+    }}>
+      {badge.text}
+    </span>
+  )
+
+  // Horizontal layout for Mobile Bento Box
+  if (horizontal) {
+    return (
+      <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: emoji ? 18 : 0 }}>
+        {emoji && <div style={{ fontSize: 34, lineHeight: 1, width: 44, textAlign: 'center', flexShrink: 0 }}>{emoji}</div>}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              {label} <span style={{ color: 'var(--orange-dim)' }}>· {sanskrit}</span>
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <p style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>{value}</p>
+            {badgeEl}
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</p>
+          {pct !== undefined && <ProgressBar pct={pct} />}
+        </div>
+      </div>
+    )
+  }
+
+  // Vertical layout for Desktop Grid
   return (
-    <div className="card" style={{ padding: '16px', flex: 1, minWidth: 0 }}>
-      <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+    <div className="card" style={{ padding: '16px', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
         {label} <span style={{ color: 'var(--orange-dim)' }}>· {sanskrit}</span>
       </p>
-      <div style={{ fontSize: emoji ? 22 : 0, marginBottom: emoji ? 4 : 0, lineHeight: 1 }}>{emoji}</div>
-      <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: 4 }}>
-        {value}
-      </p>
-      <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>{sub}</p>
-      {pct !== undefined && <ProgressBar pct={pct} />}
+      {emoji && <div style={{ fontSize: 28, marginBottom: 10, lineHeight: 1 }}>{emoji}</div>}
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+        <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+          {value}
+        </p>
+        {badgeEl}
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.4, flex: 1 }}>{sub}</p>
+      {pct !== undefined && <div style={{ marginTop: 'auto', paddingTop: 12 }}><ProgressBar pct={pct} /></div>}
     </div>
   )
 }
@@ -160,8 +198,17 @@ export default function PanchangPage() {
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState<string | null>(null)
   const [clock,    setClock]    = useState(new Date())
+  const [isMobile, setIsMobile] = useState(false)
 
-  // Live clock — re-renders muhurta active state every 30s
+  // Responsive Hook
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Live clock
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 30000)
     return () => clearInterval(id)
@@ -231,7 +278,7 @@ export default function PanchangPage() {
           <div style={{ cursor: 'pointer' }} title="Help & Info">
             <HelpButton page="panchang" />
           </div>
-          {p && (
+          {p && !isMobile && (
             <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
               <MapPin size={11} strokeWidth={1.5} />
               {p.location}
@@ -250,7 +297,7 @@ export default function PanchangPage() {
           <p style={{ fontSize: 11, color: 'var(--orange)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
             Daily Panchang
           </p>
-          <h1 className="serif" style={{ fontSize: 'clamp(26px,4vw,36px)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
+          <h1 className="serif" style={{ fontSize: 'clamp(28px,5vw,40px)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
             {p ? fmtDate(p.date, tz) : 'Today'}
           </h1>
           {p && (
@@ -262,7 +309,7 @@ export default function PanchangPage() {
           )}
         </div>
 
-        {/* Loading */}
+        {/* Loading / Error States */}
         {loading && (
           <div className="card" style={{ padding: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
             <Loader2 size={22} color="var(--orange)" strokeWidth={1.5} style={{ animation: 'spin 1s linear infinite' }} />
@@ -279,136 +326,110 @@ export default function PanchangPage() {
 
         {p && (
           <>
-            {/* -- Sunrise / Sunset strip -- */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            {/* -- Sunrise / Sunset Bento Strip -- */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
               {[
                 { emoji: '🌅', label: 'Sunrise', time: fmtTime(p.sunrise, tz) },
                 { emoji: '🌇', label: 'Sunset',  time: fmtTime(p.sunset,  tz) },
               ].map(({ emoji, label, time }) => (
                 <div key={label} className="card" style={{
-                  flex: 1, padding: '14px 18px',
-                  display: 'flex', alignItems: 'center', gap: 12
+                  padding: isMobile ? '18px 16px' : '16px 20px',
+                  display: 'flex', 
+                  flexDirection: isMobile ? 'column' : 'row', 
+                  alignItems: isMobile ? 'flex-start' : 'center', 
+                  gap: isMobile ? 10 : 16
                 }}>
-                  <span style={{ fontSize: 22 }}>{emoji}</span>
+                  <div style={{ fontSize: isMobile ? 32 : 28, lineHeight: 1 }}>{emoji}</div>
                   <div>
-                    <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>{label}</p>
-                    <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--text-primary)' }}>{time}</p>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: isMobile ? 4 : 2 }}>{label}</p>
+                    <p style={{ fontSize: isMobile ? 18 : 16, fontWeight: 600, color: 'var(--text-primary)' }}>{time}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* -- Five Panchang elements -- */}
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+            {/* -- Panchang Elements Responsive Grid -- */}
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
               Panchang Elements
             </p>
 
-            {/* -- Row 1: Vara + Tithi + Nakshatra -- */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-              <PanchangCard
-                label="Vara"       sanskrit="Weekday"
-                value={p.vara.name} sub={`Lord: ${p.vara.lord}`}
-                emoji={{ Sunday:'☀️', Monday:'🌙', Tuesday:'🔴', Wednesday:'💚', Thursday:'🟡', Friday:'⚪', Saturday:'🔵' }[p.vara.name]}
-              />
-              <PanchangCard
-                label="Tithi"      sanskrit="Lunar day"
-                value={p.tithi.name}
-                sub={`${p.tithi.paksha} Paksha · #${p.tithi.number}`}
-                pct={p.tithi.pct}
-                emoji={moonEmoji(p.tithi.index)}
-              />
-              <PanchangCard
-                label="Nakshatra"  sanskrit="Moon star"
-                value={p.nakshatra.name}
-                sub={`Pada ${p.nakshatra.pada} · Lord: ${p.nakshatra.lord}`}
-                pct={p.nakshatra.pct}
-                emoji="⭐"
-              />
-            </div>
-
-            {/* -- Row 2: Yoga + Karana -- */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-              <div className="card" style={{ flex: 1, padding: '16px' }}>
-                <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
-                  Yoga <span style={{ color: 'var(--orange-dim)' }}>· Nityayoga</span>
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)' }}>{p.yoga.name}</p>
-                  <span style={{
-                    fontSize: 10, padding: '2px 8px', borderRadius: 100, fontWeight: 500,
-                    // Updated so it remains highly readable on white
-                    background: p.yoga.quality === 'auspicious'
-                      ? 'rgba(34,197,94,0.15)' : p.yoga.quality === 'inauspicious'
-                      ? 'rgba(239,68,68,0.15)' : 'var(--bg-surface2)',
-                    color: 'var(--text-primary)',
-                    border: `1px solid ${p.yoga.quality === 'auspicious'
-                      ? 'rgba(34,197,94,0.3)' : p.yoga.quality === 'inauspicious'
-                      ? 'rgba(239,68,68,0.3)' : 'var(--border)'}`,
-                  }}>
-                    {p.yoga.quality}
-                  </span>
+            {isMobile ? (
+              // Mobile Bento Box Stack
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
+                <PanchangCard label="Tithi" sanskrit="Lunar Day" value={p.tithi.name} sub={`${p.tithi.paksha} Paksha · #${p.tithi.number}`} pct={p.tithi.pct} emoji={moonEmoji(p.tithi.index)} horizontal />
+                
+                <PanchangCard label="Nakshatra" sanskrit="Moon Star" value={p.nakshatra.name} sub={`Pada ${p.nakshatra.pada} · Lord: ${p.nakshatra.lord}`} pct={p.nakshatra.pct} emoji="⭐" horizontal />
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <PanchangCard label="Vara" sanskrit="Weekday" value={p.vara.name} sub={`Lord: ${p.vara.lord}`} emoji={{ Sunday:'☀️', Monday:'🌙', Tuesday:'🔴', Wednesday:'💚', Thursday:'🟡', Friday:'⚪', Saturday:'🔵' }[p.vara.name]} />
+                  <PanchangCard label="Karana" sanskrit="Half-Tithi" value={p.karana.name} sub="Half of current Tithi" />
                 </div>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Sun + Moon combined longitude</p>
+                
+                <PanchangCard label="Yoga" sanskrit="Nityayoga" value={p.yoga.name} sub="Sun + Moon combined longitude" badge={{ text: p.yoga.quality, type: p.yoga.quality === 'auspicious' ? 'positive' : p.yoga.quality === 'inauspicious' ? 'negative' : 'neutral' }} horizontal />
               </div>
-
-              <div className="card" style={{ flex: 1, padding: '16px' }}>
-                <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
-                  Karana <span style={{ color: 'var(--orange-dim)' }}>· Half-tithi</span>
-                </p>
-                <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
-                  {p.karana.name}
-                </p>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Half of current Tithi</p>
-              </div>
-            </div>
+            ) : (
+              // Desktop Multi-Column Grid
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
+                  <PanchangCard label="Vara" sanskrit="Weekday" value={p.vara.name} sub={`Lord: ${p.vara.lord}`} emoji={{ Sunday:'☀️', Monday:'🌙', Tuesday:'🔴', Wednesday:'💚', Thursday:'🟡', Friday:'⚪', Saturday:'🔵' }[p.vara.name]} />
+                  <PanchangCard label="Tithi" sanskrit="Lunar day" value={p.tithi.name} sub={`${p.tithi.paksha} Paksha · #${p.tithi.number}`} pct={p.tithi.pct} emoji={moonEmoji(p.tithi.index)} />
+                  <PanchangCard label="Nakshatra" sanskrit="Moon star" value={p.nakshatra.name} sub={`Pada ${p.nakshatra.pada} · Lord: ${p.nakshatra.lord}`} pct={p.nakshatra.pct} emoji="⭐" />
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28 }}>
+                  <PanchangCard label="Yoga" sanskrit="Nityayoga" value={p.yoga.name} sub="Sun + Moon combined longitude" badge={{ text: p.yoga.quality, type: p.yoga.quality === 'auspicious' ? 'positive' : p.yoga.quality === 'inauspicious' ? 'negative' : 'neutral' }} />
+                  <PanchangCard label="Karana" sanskrit="Half-tithi" value={p.karana.name} sub="Half of current Tithi" />
+                </div>
+              </>
+            )}
 
             {/* -- Muhurta timings -- */}
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
               Muhurta Timings
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
                 <MuhurtaRow
-                key="brahma"
-                label="Brahma Muhurta"
-                sublabel="Ideal for meditation, study & spiritual practice"
-                m={p.muhurtas.brahma}  tz={tz} isGood={true}
+                  key="brahma"
+                  label="Brahma Muhurta"
+                  sublabel="Ideal for meditation, study & spiritual practice"
+                  m={p.muhurtas.brahma}  tz={tz} isGood={true}
                 />
                 <MuhurtaRow
-                key="abhijit"
-                label="Abhijit Muhurta"
-                sublabel="Most auspicious time — good for new beginnings"
-                m={p.muhurtas.abhijit} tz={tz} isGood={true}
+                  key="abhijit"
+                  label="Abhijit Muhurta"
+                  sublabel="Most auspicious time — good for new beginnings"
+                  m={p.muhurtas.abhijit} tz={tz} isGood={true}
                 />
                 <MuhurtaRow
-                key="rahu"
-                label="Rahu Kaal"
-                sublabel="Inauspicious — avoid starting new ventures"
-                m={p.muhurtas.rahu}    tz={tz} isGood={false}
+                  key="rahu"
+                  label="Rahu Kaal"
+                  sublabel="Inauspicious — avoid starting new ventures"
+                  m={p.muhurtas.rahu}    tz={tz} isGood={false}
                 />
                 <MuhurtaRow
-                key="gulika"
-                label="Gulika Kaal"
-                sublabel="Inauspicious — avoid important decisions"
-                m={p.muhurtas.gulika}  tz={tz} isGood={false}
+                  key="gulika"
+                  label="Gulika Kaal"
+                  sublabel="Inauspicious — avoid important decisions"
+                  m={p.muhurtas.gulika}  tz={tz} isGood={false}
                 />
             </div>
 
             {/* -- Ask AI about today -- */}
             <Link href="/chat" style={{ textDecoration: 'none' }}>
               <div style={{
-                padding: '20px 24px', borderRadius: 14, cursor: 'pointer',
+                padding: '20px 24px', borderRadius: 16, cursor: 'pointer',
                 background: 'var(--orange-glow)', border: '1px solid var(--orange-border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between'
               }}>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
                     Ask about today's Panchang
                   </p>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                     What does {p.tithi.paksha} {p.tithi.name} mean for you personally?
                   </p>
                 </div>
-                <span style={{ color: 'var(--orange)', fontSize: 18 }}>→</span>
+                <span style={{ color: 'var(--orange)', fontSize: 20 }}>→</span>
               </div>
             </Link>
           </>

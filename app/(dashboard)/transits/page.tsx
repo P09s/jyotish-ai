@@ -19,7 +19,6 @@ const PLANET_COLOR: Record<string,string> = {
   Jupiter:'#FDE68A', Venus:'#C4B5FD', Saturn:'#94A3B8', Rahu:'#FB923C', Ketu:'#A3A3A3',
 }
 
-// Swapped faint color tags to standard text colors so they appear solid on white backgrounds
 const SEV: Record<string,{bg:string;border:string;dot:string;color:string}> = {
   positive:    { bg:'rgba(34,197,94,0.1)',  border:'rgba(34,197,94,0.3)',  dot:'#22c55e', color:'var(--text-primary)' },
   caution:     { bg:'rgba(234,179,8,0.1)',  border:'rgba(234,179,8,0.3)',  dot:'#eab308', color:'var(--text-primary)' },
@@ -33,6 +32,15 @@ export default function TransitsPage() {
   const [data,    setData]    = useState<Transits | null>(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    // Check if mobile on mount and on resize
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -134,79 +142,172 @@ export default function TransitsPage() {
               </>
             )}
 
-            {/* Transit table */}
-            <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:10 }}>
-              Transiting Planets
-            </p>
-            <div className="card" style={{ padding:0, marginBottom:20, overflow:'hidden' }}>
-              {/* Header row */}
-              <div style={{ display:'grid', gridTemplateColumns:'140px 1fr 36px 1fr', padding:'9px 16px', borderBottom:'1px solid var(--border)', background:'var(--bg-surface)' }}>
-                {['Planet','Now','H','Natal'].map(h => (
-                  <span key={h} style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{h}</span>
-                ))}
-              </div>
-
-              {t.planets.map((p, i) => {
-                const col     = PLANET_COLOR[p.name] ?? 'var(--orange)'
-                const moved   = p.current.sign_index !== p.natal.sign_index
-                const isLast  = i === t.planets.length - 1
-
-                return (
-                  <div key={p.name} style={{
-                    display:'grid', gridTemplateColumns:'140px 1fr 36px 1fr',
-                    padding:'11px 16px', alignItems:'center',
-                    borderBottom: isLast ? 'none' : '1px solid var(--border)',
-                    background: p.conjunct_natal.length > 0 ? 'var(--orange-glow)' : 'transparent',
-                  }}>
-                    {/* Name */}
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <span style={{ fontSize:17, color:col, fontFamily:'serif', lineHeight:1, flexShrink:0 }}>{p.symbol}</span>
-                      <div>
-                        <span style={{ fontSize:13, color:'var(--text-primary)' }}>{p.name}</span>
-                        {p.current.isRetrograde && (
-                          <span style={{ fontSize:10, color:'var(--orange-dim)', marginLeft:4 }}>℞</span>
-                        )}
-                        <div style={{ fontSize:10, color:'var(--text-muted)' }}>{p.sanskrit}</div>
-                      </div>
-                    </div>
-
-                    {/* Current */}
-                    <div>
-                      <span style={{ fontSize:13, color: moved ? 'var(--orange)' : 'var(--text-secondary)', fontWeight: moved ? 500 : 400 }}>
-                        {p.current.sign}
-                      </span>
-                      <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:4 }}>
-                        {p.current.degree.toFixed(0)}°
-                      </span>
-                      {p.conjunct_natal.length > 0 && (
-                        <div style={{ fontSize:10, color:'var(--orange-dim)', marginTop:2 }}>
-                          near natal {p.conjunct_natal.slice(0,2).join(', ')}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Transit house badge */}
-                    <span style={{
-                      display:'inline-flex', alignItems:'center', justifyContent:'center',
-                      fontSize:10, fontWeight:500, padding:'2px 5px', borderRadius:5,
-                      color: p.transit_house !== p.natal.house ? 'var(--orange)' : 'var(--text-muted)',
-                      background: p.transit_house !== p.natal.house ? 'var(--orange-glow)' : 'var(--bg-surface2)',
-                      border:`1px solid ${p.transit_house !== p.natal.house ? 'var(--orange-border)' : 'var(--border)'}`,
-                    }}>
-                      H{p.transit_house}
-                    </span>
-
-                    {/* Natal */}
-                    <div>
-                      <span style={{ fontSize:12, color:'var(--text-muted)' }}>{p.natal.sign}</span>
-                      <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:4 }}>
-                        {p.natal.degree.toFixed(0)}° · H{p.natal.house}
-                      </span>
-                    </div>
+            {/* Transit table - DESKTOP VERSION */}
+            {!isMobile && (
+              <>
+                <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:10 }}>
+                  Transiting Planets
+                </p>
+                <div className="card" style={{ padding:0, marginBottom:20, overflow:'hidden' }}>
+                  {/* Header row */}
+                  <div style={{ display:'grid', gridTemplateColumns:'140px 1fr 50px 1fr', padding:'9px 16px', borderBottom:'1px solid var(--border)', background:'var(--bg-surface)' }}>
+                    {['Planet','Now','H','Natal'].map(h => (
+                      <span key={h} style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{h}</span>
+                    ))}
                   </div>
-                )
-              })}
-            </div>
+
+                  {t.planets.map((p, i) => {
+                    const col     = PLANET_COLOR[p.name] ?? 'var(--orange)'
+                    const moved   = p.current.sign_index !== p.natal.sign_index
+                    const isLast  = i === t.planets.length - 1
+
+                    return (
+                      <div key={p.name} style={{
+                        display:'grid', gridTemplateColumns:'140px 1fr 50px 1fr',
+                        padding:'11px 16px', alignItems:'center',
+                        borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                        background: p.conjunct_natal.length > 0 ? 'var(--orange-glow)' : 'transparent',
+                      }}>
+                        {/* Name */}
+                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                          <span style={{ fontSize:17, color:col, fontFamily:'serif', lineHeight:1, flexShrink:0 }}>{p.symbol}</span>
+                          <div>
+                            <span style={{ fontSize:13, color:'var(--text-primary)' }}>{p.name}</span>
+                            {p.current.isRetrograde && (
+                              <span style={{ fontSize:10, color:'var(--orange-dim)', marginLeft:4 }}>℞</span>
+                            )}
+                            <div style={{ fontSize:10, color:'var(--text-muted)' }}>{p.sanskrit}</div>
+                          </div>
+                        </div>
+
+                        {/* Current */}
+                        <div>
+                          <span style={{ fontSize:13, color: moved ? 'var(--orange)' : 'var(--text-secondary)', fontWeight: moved ? 500 : 400 }}>
+                            {p.current.sign}
+                          </span>
+                          <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:4 }}>
+                            {p.current.degree.toFixed(0)}°
+                          </span>
+                          {p.conjunct_natal.length > 0 && (
+                            <div style={{ fontSize:10, color:'var(--orange-dim)', marginTop:2 }}>
+                              near natal {p.conjunct_natal.slice(0,2).join(', ')}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Transit house badge */}
+                        <span style={{
+                          display:'inline-flex', alignItems:'center', justifyContent:'center',
+                          fontSize:10, fontWeight:500, padding:'4px 8px', borderRadius:5,
+                          color: p.transit_house !== p.natal.house ? 'var(--orange)' : 'var(--text-muted)',
+                          background: p.transit_house !== p.natal.house ? 'var(--orange-glow)' : 'var(--bg-surface2)',
+                          border:`1px solid ${p.transit_house !== p.natal.house ? 'var(--orange-border)' : 'var(--border)'}`,
+                          whiteSpace: 'nowrap',
+                        }}>
+                          H{p.transit_house}
+                        </span>
+
+                        {/* Natal */}
+                        <div style={{ paddingLeft: '12px' }}>
+                          <span style={{ fontSize:12, color:'var(--text-muted)' }}>{p.natal.sign}</span>
+                          <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:4 }}>
+                            {p.natal.degree.toFixed(0)}° · H{p.natal.house}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Transit table - MOBILE VERSION */}
+            {isMobile && (
+              <>
+                <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:10 }}>
+                  Transiting Planets
+                </p>
+                <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:28 }}>
+                  {t.planets.map(p => {
+                    const col     = PLANET_COLOR[p.name] ?? 'var(--orange)'
+                    const moved   = p.current.sign_index !== p.natal.sign_index
+
+                    return (
+                      <div 
+                        key={p.name} 
+                        style={{
+                          padding:'14px 16px', 
+                          borderRadius:12, 
+                          border:'1px solid var(--border)',
+                          background: p.conjunct_natal.length > 0 ? 'var(--orange-glow)' : 'var(--bg-surface)',
+                        }}
+                      >
+                        {/* Planet name and symbol */}
+                        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+                          <span style={{ fontSize:20, color:col, fontFamily:'serif', lineHeight:1 }}>{p.symbol}</span>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:14, fontWeight:500, color:'var(--text-primary)' }}>
+                              {p.name}
+                              {p.current.isRetrograde && (
+                                <span style={{ fontSize:10, color:'var(--orange-dim)', marginLeft:4 }}>℞</span>
+                              )}
+                            </div>
+                            <div style={{ fontSize:11, color:'var(--text-muted)' }}>{p.sanskrit}</div>
+                          </div>
+                        </div>
+
+                        {/* Current position */}
+                        <div style={{ marginBottom:10, paddingBottom:10, borderBottom:'1px solid var(--border)' }}>
+                          <p style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:5 }}>Now</p>
+                          <div>
+                            <span style={{ fontSize:13, color: moved ? 'var(--orange)' : 'var(--text-secondary)', fontWeight: moved ? 500 : 400 }}>
+                              {p.current.sign}
+                            </span>
+                            <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:6 }}>
+                              {p.current.degree.toFixed(0)}°
+                            </span>
+                          </div>
+                          {p.conjunct_natal.length > 0 && (
+                            <div style={{ fontSize:10, color:'var(--orange-dim)', marginTop:5 }}>
+                              ◆ near natal {p.conjunct_natal.slice(0,2).join(', ')}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Transit house and natal position side by side */}
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                          {/* Transit House */}
+                          <div>
+                            <p style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:5 }}>House</p>
+                            <span style={{
+                              display:'inline-flex', alignItems:'center', justifyContent:'center',
+                              fontSize:11, fontWeight:500, padding:'6px 10px', borderRadius:6,
+                              color: p.transit_house !== p.natal.house ? 'var(--orange)' : 'var(--text-secondary)',
+                              background: p.transit_house !== p.natal.house ? 'var(--orange-glow)' : 'var(--bg-surface2)',
+                              border:`1px solid ${p.transit_house !== p.natal.house ? 'var(--orange-border)' : 'var(--border)'}`,
+                              width: '100%',
+                            }}>
+                              H{p.transit_house}
+                            </span>
+                          </div>
+
+                          {/* Natal position */}
+                          <div>
+                            <p style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:5 }}>Natal</p>
+                            <div style={{ fontSize:12, color:'var(--text-secondary)' }}>
+                              <div>{p.natal.sign}</div>
+                              <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>
+                                {p.natal.degree.toFixed(0)}° · H{p.natal.house}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
 
             {/* Aspects */}
             {t.aspects.length > 0 && (
@@ -214,33 +315,73 @@ export default function TransitsPage() {
                 <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:10 }}>
                   Active Aspects <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0 }}>(slow planets only)</span>
                 </p>
-                <div className="card" style={{ padding:'4px 16px', marginBottom:24 }}>
+                <div className="card" style={{ padding: 0, marginBottom: 24, overflow: 'hidden' }}>
+                  
+                  {/* Aspect Table Header */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: isMobile ? '1fr 70px 1fr 40px' : '140px 100px 140px 1fr', 
+                    padding: '9px 16px', 
+                    borderBottom: '1px solid var(--border)', 
+                    background: 'var(--bg-surface)' 
+                  }}>
+                    <span style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em' }}>Transit</span>
+                    <span style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', textAlign:'center' }}>Aspect</span>
+                    <span style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em' }}>Natal</span>
+                    <span style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', textAlign:'right' }}>House</span>
+                  </div>
+
+                  {/* Aspect Rows */}
                   {t.aspects.map((a, i) => {
                     const tc = PLANET_COLOR[a.transit_planet] ?? 'var(--orange)'
                     const nc = PLANET_COLOR[a.natal_planet]   ?? 'var(--text-muted)'
+                    const isLast = i === t.aspects.length - 1
+
                     return (
                       <div key={`${a.transit_planet}-${a.natal_planet}-${i}`} style={{
-                        display:'flex', alignItems:'center', gap:8, padding:'10px 0',
-                        borderBottom: i < t.aspects.length-1 ? '1px solid var(--border)' : 'none',
-                        flexWrap:'wrap',
+                        display: 'grid',
+                        gridTemplateColumns: isMobile ? '1fr 70px 1fr 40px' : '140px 100px 140px 1fr',
+                        padding: '11px 16px',
+                        alignItems: 'center',
+                        borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                        background: 'transparent'
                       }}>
-                        <span style={{ fontSize:15, color:tc, fontFamily:'serif' }}>{a.transit_symbol}</span>
-                        <span style={{ fontSize:12, color:'var(--text-secondary)', flex:1, minWidth:80 }}>
-                          Transit {a.transit_planet}
-                        </span>
-                        <span style={{ fontSize:11, padding:'1px 8px', borderRadius:5, background:'var(--bg-surface2)', color:'var(--text-muted)', border:'1px solid var(--border)' }}>
-                          {ASPECT_LABEL[a.aspect_num] ?? `${a.aspect_num}th`} aspect
-                        </span>
-                        <span style={{ fontSize:11, color:'var(--text-muted)' }}>→</span>
-                        <span style={{ fontSize:15, color:nc, fontFamily:'serif' }}>
-                          {t.planets.find(p=>p.name===a.natal_planet)?.symbol}
-                        </span>
-                        <span style={{ fontSize:12, color:'var(--text-muted)' }}>
-                          Natal {a.natal_planet}
-                        </span>
-                        <span style={{ fontSize:10, padding:'1px 6px', borderRadius:4, background:'var(--orange-glow)', color:'var(--orange)', border:'1px solid var(--orange-border)' }}>
-                          H{a.natal_house}
-                        </span>
+                        
+                        {/* Transit Planet */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 16, color: tc, fontFamily: 'serif', flexShrink: 0 }}>
+                            {a.transit_symbol}
+                          </span>
+                          <span style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {isMobile ? a.transit_planet.substring(0, 3) : a.transit_planet}
+                          </span>
+                        </div>
+
+                        {/* Aspect Badge & Arrow */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 5, background: 'var(--bg-surface2)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                            {ASPECT_LABEL[a.aspect_num] ?? `${a.aspect_num}th`}
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>→</span>
+                        </div>
+
+                        {/* Natal Planet */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 16, color: nc, fontFamily: 'serif', flexShrink: 0 }}>
+                            {t.planets.find(p => p.name === a.natal_planet)?.symbol}
+                          </span>
+                          <span style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {isMobile ? a.natal_planet.substring(0, 3) : a.natal_planet}
+                          </span>
+                        </div>
+
+                        {/* House Badge */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--orange-glow)', color: 'var(--orange)', border: '1px solid var(--orange-border)' }}>
+                            H{a.natal_house}
+                          </span>
+                        </div>
+
                       </div>
                     )
                   })}

@@ -116,7 +116,7 @@ export default function ChatLayout({
         }}>
           <span style={{
             fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)'
+            textTransform: 'uppercase', color: 'var(--text-muted)'
           }}>
             Conversations
           </span>
@@ -131,7 +131,7 @@ export default function ChatLayout({
             onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '0.4' }}
           >
-            <X size={14} color="white" strokeWidth={2} />
+            <X size={14} color="var(--text-primary)" strokeWidth={2} />
           </button>
         </div>
 
@@ -141,7 +141,7 @@ export default function ChatLayout({
             width: '100%', display: 'flex', alignItems: 'center', gap: 9,
             padding: '10px 12px', borderRadius: 10, cursor: 'pointer',
             background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)',
-            color: '#FDBA74', fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+            color: 'var(--orange)', fontSize: 13, fontFamily: 'DM Sans, sans-serif',
             transition: 'all 0.2s'
           }}
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(249,115,22,0.18)' }}
@@ -192,13 +192,13 @@ export default function ChatLayout({
                       }}
                     >
                       <MessageCircle size={13} strokeWidth={1.5}
-                        color={activeSessionId === session.session_id ? 'var(--orange)' : 'rgba(255,255,255,0.3)'}
+                        color={activeSessionId === session.session_id ? 'var(--orange)' : 'var(--text-muted)'}
                         style={{ flexShrink: 0 }}
                       />
                       <span style={{
                         flex: 1, fontSize: 13, lineHeight: 1.4, overflow: 'hidden',
                         textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        color: activeSessionId === session.session_id ? '#FDBA74' : 'var(--text-secondary)'
+                        color: activeSessionId === session.session_id ? 'var(--orange)' : 'var(--text-secondary)'
                       }}>
                         {session.title}
                       </span>

@@ -1,5 +1,6 @@
+// Profile/ProfileForm.tsx
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/app/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Check, Loader2 } from 'lucide-react'
@@ -18,12 +19,10 @@ type Profile = {
 function formatTimeForInput(timeStr: string | null | undefined): string {
   if (!timeStr) return '';
   
-  // If it's already in a valid 24h format (HH:mm or HH:mm:ss), return just HH:mm
   if (/^\d{2}:\d{2}/.test(timeStr)) {
     return timeStr.substring(0, 5);
   }
 
-  // Handle formats like "4:00 AM" or "4:00 PM"
   const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
   if (match) {
     let [_, hours, minutes, modifier] = match;
@@ -41,6 +40,10 @@ function formatTimeForInput(timeStr: string | null | undefined): string {
 export default function ProfileForm({ profile, userId }: { profile: Profile | null, userId: string }) {
   const router = useRouter()
   const supabase = createClient()
+  
+  // Responsive State
+  const [isMobile, setIsMobile] = useState(false)
+  
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -48,10 +51,16 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
 
   const [fullName, setFullName] = useState(profile?.full_name || '')
   const [dob, setDob] = useState(profile?.date_of_birth || '')
-  // Apply the helper function here
   const [tob, setTob] = useState(formatTimeForInput(profile?.time_of_birth))
   const [pob, setPob] = useState(profile?.place_of_birth || '')
   const [gender, setGender] = useState(profile?.gender || '')
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   async function geocodePlace(place: string) {
     const res = await fetch(`/api/geocode?place=${encodeURIComponent(place)}`)
@@ -64,7 +73,6 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
     setLoading(true); setError(''); setSaved(false); setStatus('')
 
     try {
-      // Step 1 — Save profile
       setStatus('Saving profile...')
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: userId,
@@ -78,20 +86,17 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
       })
       if (profileError) throw profileError
 
-      // Step 2 — Geocode + compute Kundali if birth details complete
       if (fullName && dob && pob) {
         setStatus('Locating birth place...')
         const geo = await geocodePlace(pob)
 
         if (geo) {
-          // Save coordinates + timezone to profile
           await supabase.from('profiles').update({
             latitude: geo.lat,
             longitude: geo.lng,
             timezone: geo.timezone
           }).eq('id', userId)
 
-          // Step 3 — Calculate Kundali
           setStatus('Computing your Kundali...')
           const kundaliRes = await fetch('/api/kundali', {
             method: 'POST',
@@ -110,7 +115,6 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
             throw new Error(errData.error || 'Kundali calculation failed')
           }
         } else {
-          // Geocoding failed — still save profile, just warn
           setError('Birth place could not be located. Try a more specific city name. Profile saved without chart.')
         }
       }
@@ -131,35 +135,19 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
   return (
     <form onSubmit={handleSave}>
       {error && (
-        <MotionDiv
-        initial={{ x: -6 }}
-        animate={{ x: [6, -4, 3, -2, 0] }}
-        transition={{ duration: 0.32 }}
-        >
+        <MotionDiv initial={{ x: -6 }} animate={{ x: [6, -4, 3, -2, 0] }} transition={{ duration: 0.32 }}>
           <div className="banner-error" style={{ marginBottom: 20 }}>{error}</div>
         </MotionDiv>
       )}
 
       {saved && !error && (
-        <MotionDiv
-        initial={{
-          opacity: 0,
-          scale: 0.96,
-        }}
-        animate={{
-          opacity: 1,
-          scale: 1,
-        }}
-        transition={{
-          duration: 0.22,
-        }}
-        >
+        <MotionDiv initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.22 }}>
           <div style={{
-            padding: '12px 16px', marginBottom: 20, borderRadius: 10,
+            padding: '12px 16px', marginBottom: 20, borderRadius: 12,
             background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
             color: '#86efac', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8
           }}>
-            <Check size={14} strokeWidth={2} />
+            <Check size={16} strokeWidth={2} />
             Profile saved & Kundali computed successfully
           </div>
         </MotionDiv>
@@ -168,63 +156,43 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
       {/* Loading status pill */}
       {loading && status && (
         <div style={{
-          padding: '10px 16px', marginBottom: 20, borderRadius: 10,
+          padding: '12px 16px', marginBottom: 20, borderRadius: 12,
           background: 'var(--orange-glow)', border: '1px solid var(--orange-border)',
           color: 'var(--orange)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 10
         }}>
-          <Loader2 size={13} strokeWidth={2} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+          <Loader2 size={16} strokeWidth={2} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
           {status}
         </div>
       )}
 
       {/* Personal section */}
-      <MotionDiv
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-      >
-        <div className="card" style={{ padding: '24px', marginBottom: 16 }}>
+      <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+        <div className="card" style={{ padding: '24px', marginBottom: 20 }}>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
             Personal
           </p>
-          <div style={{ marginBottom: 18 }}>
-            <label className="field-label">Full name</label>
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>Full name</label>
             <input
-              type="text" className="input-field" placeholder="As per birth records"
-              style={{
-                transition:
-                  'border-color 0.2s ease, transform 0.2s ease',
-                willChange: 'transform',
-                transform: 'translateZ(0)',
-              }}
-              onFocus={e => {
-                e.target.style.transform = 'translateY(-1px)'
-              }}
-              onBlur={e => {
-                e.target.style.transform = 'translateY(0)'
-              }}
-              value={fullName} onChange={e => setFullName(e.target.value)}
+              type="text" 
+              placeholder="As per birth records"
+              style={inputStyle}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              value={fullName} 
+              onChange={e => setFullName(e.target.value)}
             />
           </div>
           <div>
-            <label className="field-label">
-              Gender <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
+            <label style={labelStyle}>
+              Gender <span style={{ color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 'normal' }}>(optional)</span>
             </label>
             <select
-              className="input-field" value={gender}
-              onChange={e => setGender(e.target.value)} style={{
-                appearance: 'none',
-                transition:
-                  'border-color 0.2s ease, transform 0.2s ease',
-                willChange: 'transform',
-                transform: 'translateZ(0)',
-              }}
-              onFocus={e => {
-                e.target.style.transform = 'translateY(-1px)'
-              }}
-              onBlur={e => {
-                e.target.style.transform = 'translateY(0)'
-              }}
+              style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              value={gender}
+              onChange={e => setGender(e.target.value)} 
             >
               <option value="">Prefer not to say</option>
               <option value="male">Male</option>
@@ -236,113 +204,82 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
       </MotionDiv>
 
       {/* Birth details section */}
-      <MotionDiv
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          delay: 0.08,
-          duration: 0.28,
-        }}
-      >
-        <div className="card" style={{ padding: '24px', marginBottom: 16 }}>
+      <MotionDiv initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.28 }}>
+        <div className="card" style={{ padding: '24px', marginBottom: 20 }}>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
             Birth Details
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+          
+          {/* Responsive Grid Update */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+            gap: 16, 
+            marginBottom: 20 
+          }}>
             <div>
-              <label className="field-label">Date of birth</label>
+              <label style={labelStyle}>Date of birth</label>
               <input
-                type="date" className="input-field" 
-                style={{
-                  transition:
-                    'border-color 0.2s ease, transform 0.2s ease',
-                  willChange: 'transform',
-                  transform: 'translateZ(0)',
-                }}
-                onFocus={e => {
-                  e.target.style.transform = 'translateY(-1px)'
-                }}
-                onBlur={e => {
-                  e.target.style.transform = 'translateY(0)'
-                }}
-                value={dob} onChange={e => setDob(e.target.value)}
+                type="date" 
+                style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                value={dob} 
+                onChange={e => setDob(e.target.value)}
               />
             </div>
             <div>
-              <label className="field-label">
-                Time <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
+              <label style={labelStyle}>
+                Time <span style={{ color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 'normal' }}>(optional)</span>
               </label>
               <input
-                type="time" className="input-field"
-                style={{
-                  transition:
-                    'border-color 0.2s ease, transform 0.2s ease',
-                  willChange: 'transform',
-                  transform: 'translateZ(0)',
-                }}
-                onFocus={e => {
-                  e.target.style.transform = 'translateY(-1px)'
-                }}
-                onBlur={e => {
-                  e.target.style.transform = 'translateY(0)'
-                }}
-                value={tob} onChange={e => setTob(e.target.value)}
+                type="time" 
+                style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                value={tob} 
+                onChange={e => setTob(e.target.value)}
               />
             </div>
           </div>
           <div>
-            <label className="field-label">Place of birth</label>
+            <label style={labelStyle}>Place of birth</label>
             <input
-              type="text" className="input-field"
-              style={{
-                transition:
-                  'border-color 0.2s ease, transform 0.2s ease',
-                willChange: 'transform',
-                transform: 'translateZ(0)',
-              }}
-              onFocus={e => {
-                e.target.style.transform = 'translateY(-1px)'
-              }}
-              onBlur={e => {
-                e.target.style.transform = 'translateY(0)'
-              }}
-              placeholder="City, State, Country e.g. Mumbai, Maharashtra, India"
-              value={pob} onChange={e => setPob(e.target.value)}
+              type="text" 
+              style={inputStyle}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              placeholder="City, State e.g. Mumbai"
+              value={pob} 
+              onChange={e => setPob(e.target.value)}
             />
           </div>
 
           {/* Info note */}
           <div style={{
-            marginTop: 14, padding: '10px 14px', borderRadius: 10,
+            marginTop: 20, padding: '12px 16px', borderRadius: 12,
             background: 'var(--orange-glow)', border: '1px solid var(--orange-border)'
           }}>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.65, margin: 0 }}>
-              ☉ Time of birth determines your Ascendant (Lagna). Even a 10-minute difference can change your rising sign. Your birth place is geocoded to precise coordinates for accurate calculations.
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+              <span style={{ color: 'var(--orange)', fontWeight: 600 }}>☉</span> Time of birth determines your Ascendant (Lagna). Even a 10-minute difference can change your rising sign. Your birth place is geocoded to precise coordinates for accurate calculations.
             </p>
           </div>
         </div>
       </MotionDiv>
 
-      <MotionDiv
-        whileHover={{
-          y: -1,
-        }}
-        whileTap={{
-          scale: 0.99,
-        }}
-      >
+      <MotionDiv whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
         <button
           type="submit" className="btn-primary" disabled={loading}
-          style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15 }}
+          style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: 15, borderRadius: 14 }}
         >
           {loading ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-              <Loader2 size={15} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
+              <Loader2 size={18} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
               {status || 'Saving...'}
             </span>
           ) : saved ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-              <Check size={15} strokeWidth={2} /> Saved
+              <Check size={18} strokeWidth={2} /> Saved
             </span>
           ) : (
             'Save & compute Kundali'
@@ -353,4 +290,42 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </form>
   )
+}
+
+// Global UI Styles for strict containment
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px 16px',
+  borderRadius: 12,
+  background: 'var(--bg-surface2)',
+  border: '1px solid var(--border)',
+  color: 'var(--text-primary)',
+  fontSize: 14,
+  outline: 'none',
+  boxSizing: 'border-box', // Strict containment fix
+  fontFamily: 'inherit',
+  transition: 'border-color 0.2s ease, transform 0.2s ease',
+  willChange: 'transform',
+  transform: 'translateZ(0)',
+}
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 11,
+  color: 'var(--text-muted)',
+  display: 'block',
+  marginBottom: 8,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  fontWeight: 500,
+}
+
+// Input Interaction Handlers
+const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.target.style.transform = 'translateY(-2px)'
+  e.target.style.borderColor = 'var(--orange)'
+}
+
+const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.target.style.transform = 'translateY(0)'
+  e.target.style.borderColor = 'var(--border)'
 }

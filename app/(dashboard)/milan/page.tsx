@@ -102,6 +102,9 @@ function CompatDial({ percent, color }: { percent: number; color: string }) {
 export default function MilanPage() {
   const router = useRouter()
 
+  // Responsive state
+  const [isMobile, setIsMobile] = useState(false)
+
   // User's own chart
   const [myChart, setMyChart] = useState<any>(null)
   const [myProfile, setMyProfile] = useState<any>(null)
@@ -118,6 +121,13 @@ export default function MilanPage() {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ ashtakoot: AshtakootResult; narrative: string } | null>(null)
   const [showAllKootas, setShowAllKootas] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -266,15 +276,20 @@ export default function MilanPage() {
           </div>
         )}
 
-        {/* Partner form */}
-        <div className="card" style={{ padding: '24px', marginBottom: 20 }}>
+        {/* Partner form - REDESIGNED FOR RESPONSIVENESS */}
+        <div className="card" style={{ padding: isMobile ? '20px' : '28px', marginBottom: 24 }}>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
             Partner Details
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+            gap: isMobile ? 16 : 20, 
+            marginBottom: 20 
+          }}>
             <div>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Name (optional)</label>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Name (optional)</label>
               <input
                 type="text"
                 value={partnerName}
@@ -284,7 +299,7 @@ export default function MilanPage() {
               />
             </div>
             <div>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Date of Birth *</label>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Date of Birth *</label>
               <input
                 type="date"
                 value={partnerDOB}
@@ -293,7 +308,7 @@ export default function MilanPage() {
               />
             </div>
             <div>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Time of Birth</label>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Time of Birth</label>
               <input
                 type="time"
                 value={partnerTOB}
@@ -302,7 +317,7 @@ export default function MilanPage() {
               />
             </div>
             <div>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Birth Place *</label>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Birth Place *</label>
               <input
                 type="text"
                 value={partnerPlace}
@@ -314,7 +329,7 @@ export default function MilanPage() {
           </div>
 
           {error && (
-            <div style={{ padding: '10px 14px', borderRadius: 8, marginBottom: 14, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <div style={{ padding: '12px 16px', borderRadius: 10, marginBottom: 20, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <p style={{ fontSize: 13, color: '#FCA5A5' }}>{error}</p>
             </div>
           )}
@@ -323,16 +338,24 @@ export default function MilanPage() {
             className="btn-primary"
             onClick={handleCalculate}
             disabled={calculating || loading || !myChart}
-            style={{ width: '100%', padding: '12px', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: (calculating || !myChart) ? 0.6 : 1, cursor: (calculating || !myChart) ? 'not-allowed' : 'pointer' }}
+            style={{ 
+              width: '100%', 
+              padding: '14px', 
+              fontSize: 15, 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, 
+              opacity: (calculating || !myChart) ? 0.6 : 1, 
+              cursor: (calculating || !myChart) ? 'not-allowed' : 'pointer',
+              borderRadius: 12
+            }}
           >
             {calculating ? (
               <>
-                <Loader2 size={16} strokeWidth={1.5} style={{ animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={18} strokeWidth={1.5} style={{ animation: 'spin 1s linear infinite' }} />
                 Calculating…
               </>
             ) : (
               <>
-                <Heart size={15} strokeWidth={1.5} />
+                <Heart size={18} strokeWidth={1.5} />
                 Calculate Compatibility
               </>
             )}
@@ -412,15 +435,17 @@ export default function MilanPage() {
   )
 }
 
+// Upgraded Input Styles
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '10px 14px',
-  borderRadius: 10,
-  background: 'var(--bg-input)',
+  padding: '12px 16px',
+  borderRadius: 12,
+  background: 'var(--bg-surface2)',
   border: '1px solid var(--border)',
   color: 'var(--text-primary)',
-  fontSize: 13,
+  fontSize: 14,
   outline: 'none',
   boxSizing: 'border-box',
   fontFamily: 'inherit',
+  transition: 'border-color 0.2s ease',
 }

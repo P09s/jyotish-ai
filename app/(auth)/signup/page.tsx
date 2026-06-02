@@ -220,7 +220,7 @@ export default function SignupPage() {
                     <label className="field-label">Email address</label>
                     <div style={{ position: 'relative' }}>
                       <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex' }}>
-                        <Mail size={14} color="rgba(250,250,249,0.3)" strokeWidth={1.5} />
+                        <Mail size={14} color="var(--text-muted)" strokeWidth={1.5} />
                       </div>
                       <input type="email" required className="input-field"
                         placeholder="you@example.com" style={{ paddingLeft: 38 }}
@@ -232,7 +232,7 @@ export default function SignupPage() {
                     <label className="field-label">Password</label>
                     <div style={{ position: 'relative' }}>
                       <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex' }}>
-                        <Lock size={14} color="rgba(250,250,249,0.3)" strokeWidth={1.5} />
+                        <Lock size={14} color="var(--text-muted)" strokeWidth={1.5} />
                       </div>
                       <input type="password" required className="input-field"
                         placeholder="Minimum 6 characters" style={{ paddingLeft: 38 }}
