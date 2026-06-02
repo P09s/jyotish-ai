@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/app/components/ThemeProvider'
 import { MotionDiv } from '@/app/components/motion-wrapper'
 import { motion, AnimatePresence } from 'framer-motion'
 import HelpButton from '@/app/components/HelpButton'
+import Navbar from '@/app/components/Navbar'
 
 const PLANETS_ORDER = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu']
 const SYMBOLS: Record<string, string> = {
@@ -301,23 +302,7 @@ export default function KundaliPage() {
   return (
     <div className="relative min-h-screen">
       <div className="stars" />
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50, padding: '0 28px', height: 60,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'var(--bg-nav)', backdropFilter: 'blur(24px)', borderBottom: '1px solid var(--border)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sun size={16} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>Daivam</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <ThemeToggle />
-          <HelpButton page="kundali" />
-          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
-            <ArrowLeft size={14} strokeWidth={1.5} /> Dashboard
-          </Link>
-        </div>
-      </nav>
+      <Navbar page="kundali" showBack />
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '44px 24px 80px', position: 'relative', zIndex: 1 }}>
         

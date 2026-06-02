@@ -10,6 +10,7 @@ import SignOutButton from './SignOutButton'
 import { ThemeToggle } from '@/app/components/ThemeProvider'
 import { MotionDiv } from '@/app/components/motion-wrapper'
 import HelpButton from '@/app/components/HelpButton'
+import Navbar from '@/app/components/Navbar'
 // import LanguageToggle from '@/app/components/LanguageToggle'
 
 export default async function DashboardPage() {
@@ -42,20 +43,11 @@ export default async function DashboardPage() {
       <div className="stars" />
 
       {/* Nav */}
-      <nav className="dashboard-nav">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sun size={16} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>Daivam</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        {/* <LanguageToggle /> */}
-          <ThemeToggle />
-          <span title="Help & Info">
-            <HelpButton page="dashboard" />
-          </span>
-          <SignOutButton />
-        </div>
-      </nav>
+      <Navbar
+  page="dashboard"
+  showBack={false}
+  extra={<SignOutButton />}
+/>
 
       {/* Main content */}
       <MotionDiv
