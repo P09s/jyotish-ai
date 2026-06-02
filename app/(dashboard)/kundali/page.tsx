@@ -444,13 +444,12 @@ export default function KundaliPage() {
           </div>
         )}
 
-        {/* 3. Planetary Positions (Stacked Cards on Mobile) */}
+        {/* 3. Planetary Positions */}
         {!loading && (
           <div className="card" style={{ padding: isMobile ? '16px' : '24px', marginBottom: 20 }}>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>Planetary Positions</p>
 
             {isMobile ? (
-              // Mobile View: Stacked Flex blocks with forced Wrap to prevent breakout
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {PLANETS_ORDER.map((name) => {
                   const p = planetMap[name]
@@ -487,7 +486,6 @@ export default function KundaliPage() {
                 })}
               </div>
             ) : (
-              // Desktop View: Table
               <>
                 <div style={{ display: 'flex', alignItems: 'center', padding: '0 0 10px', borderBottom: '1px solid var(--border)', marginBottom: 2 }}>
                   <div style={{ width: 40, flexShrink: 0 }} />
@@ -544,7 +542,7 @@ export default function KundaliPage() {
               textTransform: 'uppercase', marginBottom: 16
             }}>Vimshottari Dasha</p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 12 : 6 }}>
               {chart.vimshottari_dasha.slice(0, 6).map((d: any) => {
                 const isCur = d.isCurrent
                 const curAD = d.antardashas?.find((ad: any) => ad.isCurrent)
@@ -555,134 +553,140 @@ export default function KundaliPage() {
                     {/* ── Mahadasha row ──────────────────────────────────── */}
                     <div style={{
                       display: 'flex', 
-                      flexDirection: isMobile ? 'column' : 'row',
                       alignItems: isMobile ? 'flex-start' : 'center', 
-                      justifyContent: 'space-between',
-                      gap: isMobile ? 4 : 12,
-                      padding: '12px 14px', borderRadius: isCur ? '10px 10px 0 0' : 10,
+                      gap: 12,
+                      padding: isMobile ? '16px' : '12px 14px', 
+                      borderRadius: isCur ? '12px 12px 0 0' : 12,
                       background: isCur ? 'var(--orange-glow)' : 'var(--bg-surface)',
                       border: `1px solid ${isCur ? 'var(--orange-border)' : 'var(--border)'}`,
                       borderBottom: isCur ? 'none' : undefined,
                       boxSizing: 'border-box',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0 }}>
-                        <div style={{
-                          width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                          background: isCur ? 'var(--orange)' : 'var(--border2)'
-                        }} />
-                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '4px 12px', minWidth: 0 }}>
+                      {/* Dot */}
+                      <div style={{
+                        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                        background: isCur ? 'var(--orange)' : 'var(--border2)',
+                        marginTop: isMobile ? 6 : 0 // Aligns with first line of text on mobile
+                      }} />
+                      
+                      {/* Flex content wrapper */}
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: isMobile ? 'column' : 'row',
+                        alignItems: isMobile ? 'flex-start' : 'center', 
+                        justifyContent: 'space-between', 
+                        width: '100%', 
+                        gap: isMobile ? 6 : 16, 
+                        minWidth: 0 
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                           <span style={{
-                            fontSize: 14, fontWeight: isCur ? 600 : 500,
+                            fontSize: 15, fontWeight: isCur ? 600 : 500,
                             color: isCur ? 'var(--text-primary)' : 'var(--text-muted)',
-                            wordBreak: 'break-word',
+                            wordBreak: 'break-word', lineHeight: 1.2
                           }}>
                             {d.lord} Mahadasha
-                            {isCur && !isMobile && (
-                              <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 8, whiteSpace: 'nowrap' }}>
-                                ← current
-                              </span>
-                            )}
                           </span>
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                            {d.start?.slice(0, 7)} – {d.end?.slice(0, 7)}
-                          </span>
+                          {isCur && (
+                            <span style={{ fontSize: 10, color: 'var(--orange)', background: 'rgba(249,115,22,0.15)', padding: '2px 6px', borderRadius: 4, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                              Current
+                            </span>
+                          )}
                         </div>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                          {d.start?.slice(0, 7)} — {d.end?.slice(0, 7)}
+                        </span>
                       </div>
-                      {isCur && isMobile && (
-                         <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 18, marginTop: 2 }}>
-                           Current Phase
-                         </span>
-                      )}
                     </div>
 
                     {/* ── Antardasha rows — only for current mahadasha ───── */}
                     {isCur && d.antardashas?.length > 0 && (
                       <div style={{
-                        padding: '8px 10px 10px',
+                        padding: isMobile ? '12px' : '10px 10px 12px',
                         background: 'var(--bg-surface2)',
                         border: '1px solid var(--orange-border)',
-                        borderTop: 'none', borderRadius: '0 0 10px 10px',
-                        display: 'flex', flexDirection: 'column', gap: 3,
+                        borderTop: 'none', borderRadius: '0 0 12px 12px',
+                        display: 'flex', flexDirection: 'column', gap: isMobile ? 8 : 4,
                         boxSizing: 'border-box',
                       }}>
-                        {/* Column headers */}
-                        <div style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '4px 8px 8px', gap: 8
-                        }}>
-                          <span style={{
-                            fontSize: 10, color: 'var(--text-muted)',
-                            textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: 13
+                        {/* Headers: Only render on Desktop */}
+                        {!isMobile && (
+                          <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '0 12px 10px 24px', borderBottom: '1px solid var(--border)', marginBottom: 4
                           }}>
-                            Sub-period
-                          </span>
-                          <span style={{
-                            fontSize: 10, color: 'var(--text-muted)',
-                            textTransform: 'uppercase', letterSpacing: '0.08em'
-                          }}>
-                            Duration
-                          </span>
-                        </div>
+                            <span style={{
+                              fontSize: 10, color: 'var(--text-muted)',
+                              textTransform: 'uppercase', letterSpacing: '0.08em'
+                            }}>
+                              Sub-period
+                            </span>
+                            <span style={{
+                              fontSize: 10, color: 'var(--text-muted)',
+                              textTransform: 'uppercase', letterSpacing: '0.08em',
+                              flexShrink: 0
+                            }}>
+                              Duration
+                            </span>
+                          </div>
+                        )}
 
                         {d.antardashas.map((ad: any) => {
                           const isAdCur  = ad.isCurrent
                           const isPast   = new Date(ad.end) < new Date()
                           return (
                             <div key={ad.lord + ad.start} style={{
-                              display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '4px 8px',
-                              padding: '8px', borderRadius: 8,
-                              background: isAdCur
-                                ? 'var(--orange-glow)'
-                                : 'transparent',
-                              border: isAdCur
-                                ? '1px solid var(--orange-border)'
-                                : '1px solid transparent',
+                              display: 'flex', 
+                              alignItems: isMobile ? 'flex-start' : 'center', 
+                              gap: 12,
+                              padding: isMobile ? '10px 12px' : '8px 12px', 
+                              borderRadius: 8,
+                              background: isAdCur ? 'var(--orange-glow)' : 'transparent',
+                              border: isAdCur ? '1px solid var(--orange-border)' : '1px solid transparent',
                               boxSizing: 'border-box',
                             }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                                {/* Status dot */}
-                                <div style={{
-                                  width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-                                  background: isAdCur
-                                    ? 'var(--orange)'
-                                    : isPast
-                                    ? 'var(--text-muted)'
-                                    : 'var(--border2)'
-                                }} />
+                              {/* Dot */}
+                              <div style={{
+                                width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+                                background: isAdCur ? 'var(--orange)' : (isPast ? 'var(--text-muted)' : 'var(--border2)'),
+                                marginTop: isMobile ? 6 : 0
+                              }} />
 
-                                {/* Label */}
-                                <span style={{
-                                  fontSize: 13,
-                                  color: isAdCur
-                                    ? 'var(--orange)'
-                                    : isPast
-                                    ? 'var(--text-muted)'
-                                    : 'var(--text-secondary)',
-                                  fontWeight: isAdCur ? 600 : 400,
-                                  wordBreak: 'break-word',
-                                }}>
-                                  {d.lord}/{ad.lord}
+                              {/* Flex content wrapper */}
+                              <div style={{ 
+                                display: 'flex', 
+                                flexDirection: isMobile ? 'column' : 'row',
+                                alignItems: isMobile ? 'flex-start' : 'center', 
+                                justifyContent: 'space-between', 
+                                width: '100%', 
+                                gap: isMobile ? 4 : 16, 
+                                minWidth: 0 
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                  <span style={{
+                                    fontSize: 14,
+                                    color: isAdCur ? 'var(--orange)' : (isPast ? 'var(--text-muted)' : 'var(--text-secondary)'),
+                                    fontWeight: isAdCur ? 600 : 400,
+                                    wordBreak: 'break-word', lineHeight: 1.2
+                                  }}>
+                                    {d.lord}/{ad.lord}
+                                  </span>
                                   {isAdCur && (
                                     <span style={{
-                                      fontSize: 10, color: 'var(--orange)',
-                                      marginLeft: 6, opacity: 0.8, whiteSpace: 'nowrap'
+                                      fontSize: 9, color: 'var(--orange)', background: 'rgba(249,115,22,0.15)', padding: '2px 6px', borderRadius: 4, fontWeight: 700, letterSpacing: '0.05em', border: '1px solid var(--orange-border)'
                                     }}>
-                                      now
+                                      NOW
                                     </span>
                                   )}
+                                </div>
+                                <span style={{
+                                  fontSize: 13, 
+                                  color: isAdCur ? 'var(--orange-dim)' : 'var(--text-hint)',
+                                  fontVariantNumeric: 'tabular-nums'
+                                }}>
+                                  {ad.start?.slice(0, 7)} — {ad.end?.slice(0, 7)}
                                 </span>
                               </div>
-
-                              {/* Date range */}
-                              <span style={{
-                                fontSize: 12, 
-                                color: isAdCur
-                                  ? 'var(--orange-dim)'
-                                  : 'var(--text-hint)',
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {ad.start?.slice(0, 7)} – {ad.end?.slice(0, 7)}
-                              </span>
                             </div>
                           )
                         })}
@@ -696,17 +700,17 @@ export default function KundaliPage() {
             {/* Summary pill */}
             {chart.summary?.current_antardasha_lord && (
               <div style={{
-                marginTop: 14, padding: '10px 14px', borderRadius: 8,
+                marginTop: 16, padding: '12px 16px', borderRadius: 10,
                 background: 'var(--bg-surface)',
                 border: '1px solid var(--border)',
                 fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6
               }}>
                 Currently in{' '}
-                <span style={{ color: 'var(--orange)', fontWeight: 500 }}>
+                <span style={{ color: 'var(--orange)', fontWeight: 600 }}>
                   {chart.summary.current_dasha_lord}/{chart.summary.current_antardasha_lord} Antardasha
                 </span>
                 {' '}ending{' '}
-                <span style={{ color: 'var(--text-secondary)' }}>
+                <span style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
                   {chart.summary.current_antardasha_ends?.slice(0, 7)}
                 </span>
               </div>
@@ -728,7 +732,6 @@ export default function KundaliPage() {
 
       </div>
 
-      {/* Render Portal directly to body for true viewport positioning */}
       {mounted && typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {isChartExpanded && chart && isMobile && (
