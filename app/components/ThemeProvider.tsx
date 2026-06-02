@@ -20,14 +20,10 @@ export function useTheme() {
 
 // ─────────────────────────────────────────────────────────────
 // ThemeProvider
-// Reads system preference on first load, then lets the user
-// override via toggle(). Preference is persisted to localStorage
-// and applied as  data-theme="light|dark"  on <html>.
 // ─────────────────────────────────────────────────────────────
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark')
 
-  // On mount: respect saved preference, fall back to system
   useEffect(() => {
     const saved = localStorage.getItem('daivam-theme') as Theme | null
     if (saved === 'light' || saved === 'dark') {
@@ -41,7 +37,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setTheme(system)
     }
 
-    // Also watch for OS-level theme changes (no saved preference only)
     const mq = window.matchMedia('(prefers-color-scheme: light)')
     const handler = (e: MediaQueryListEvent) => {
       if (!localStorage.getItem('daivam-theme')) {
@@ -75,9 +70,15 @@ function apply(theme: Theme) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// ThemeToggle — drop this anywhere in your nav/header
+// ThemeToggle
 // ─────────────────────────────────────────────────────────────
-export function ThemeToggle({ className = '' }: { className?: string }) {
+export function ThemeToggle({ 
+  className = '', 
+  isLast = false 
+}: { 
+  className?: string, 
+  isLast?: boolean 
+}) {
   const { theme, toggle } = useTheme()
   const isDark = theme === 'dark'
 
@@ -87,25 +88,30 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       className={className}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
+        display: 'flex', 
+        alignItems: 'center', 
         justifyContent: 'center',
-        width: 36,
-        height: 36,
-        borderRadius: 8,
-        border: '1px solid var(--border2, rgba(245,239,224,0.13))',
-        background: 'transparent',
-        cursor: 'pointer',
-        transition: 'border-color 0.2s, background 0.2s',
+        width: 36, 
+        height: 34, 
+        background: 'none', 
+        border: 'none',
+        borderRight: isLast ? 'none' : '1px solid var(--border)',
+        cursor: 'pointer', 
+        color: 'var(--text-secondary)',
+        transition: 'color 0.2s',
         flexShrink: 0,
       }}
+      onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+      onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
     >
       {isDark ? <SunIcon /> : <MoonIcon />}
     </button>
   )
 }
 
-// Small inline SVG icons — no extra deps
+// ─────────────────────────────────────────────────────────────
+// Icons
+// ─────────────────────────────────────────────────────────────
 function SunIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"

@@ -73,7 +73,13 @@ const HELP_DATA: Record<PageName, { title: string; content: React.ReactNode }> =
   }
 }
 
-export default function HelpButton({ page }: { page: PageName }) {
+export default function HelpButton({ 
+  page, 
+  isLast = false 
+}: { 
+  page: PageName, 
+  isLast?: boolean 
+}) {
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -87,7 +93,11 @@ export default function HelpButton({ page }: { page: PageName }) {
     return () => { document.body.style.overflow = 'unset' }
   }, [isOpen])
 
-  if (!mounted) return <HelpCircle size={18} color="var(--text-muted)" />
+  if (!mounted) return (
+    <button style={{ width: 36, height: 34, background: 'none', border: 'none' }}>
+      <HelpCircle size={18} color="var(--text-muted)" />
+    </button>
+  )
 
   const data = HELP_DATA[page]
 
@@ -95,14 +105,14 @@ export default function HelpButton({ page }: { page: PageName }) {
     <AnimatePresence>
       {isOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          {/* Backdrop with slightly softer opacity to look better in light mode */}
+          {/* Backdrop */}
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             onClick={() => setIsOpen(false)}
             style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', cursor: 'pointer' }}
           />
           
-          {/* Modal Box - Switched background to --bg-page so it is SOLID, not translucent */}
+          {/* Modal Box */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} transition={{ duration: 0.2, ease: 'easeOut' }}
             style={{ 
@@ -112,7 +122,7 @@ export default function HelpButton({ page }: { page: PageName }) {
               borderRadius: 16, overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' 
             }}
           >
-            {/* Header - Switched background to --bg-surface to layer nicely on the solid page background */}
+            {/* Header */}
             <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-surface)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ padding: 6, background: 'var(--orange-glow)', borderRadius: 8, border: '1px solid var(--orange-border)', color: 'var(--orange)' }}>
@@ -153,15 +163,24 @@ export default function HelpButton({ page }: { page: PageName }) {
       <button 
         onClick={() => setIsOpen(true)}
         style={{ 
-          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'opacity 0.2s', opacity: 0.8
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          width: 36, 
+          height: 34, 
+          background: 'none', 
+          border: 'none',
+          borderRight: isLast ? 'none' : '1px solid var(--border)',
+          cursor: 'pointer', 
+          color: 'var(--text-secondary)',
+          transition: 'color 0.2s',
+          padding: 0
         }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '0.8')}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
         title="Help & Info"
       >
-        <HelpCircle size={18} color="var(--text-muted)" />
+        <HelpCircle size={18} strokeWidth={1.5} />
       </button>
       
       {mounted && createPortal(modalContent, document.body)}

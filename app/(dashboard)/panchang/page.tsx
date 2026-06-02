@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Sun, ArrowLeft, Loader2, MapPin, Sparkles, AlertTriangle, HelpCircle } from 'lucide-react'
 import { ThemeToggle } from '@/app/components/ThemeProvider'
 import HelpButton from '@/app/components/HelpButton'
+import Navbar from '@/app/components/Navbar'
 
 type Muhurta = { start: string; end: string } | null
 type Panchang = {
@@ -262,33 +263,8 @@ export default function PanchangPage() {
       <div className="stars" />
 
       {/* Nav */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        padding: '0 28px', height: 60,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'var(--bg-nav)', backdropFilter: 'blur(24px)',
-        borderBottom: '1px solid var(--border)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sun size={16} color="var(--orange)" strokeWidth={1.5} />
-          <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>Daivam</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <ThemeToggle />
-          <div style={{ cursor: 'pointer' }} title="Help & Info">
-            <HelpButton page="panchang" />
-          </div>
-          {p && !isMobile && (
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <MapPin size={11} strokeWidth={1.5} />
-              {p.location}
-            </span>
-          )}
-          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
-            <ArrowLeft size={14} strokeWidth={1.5} /> Dashboard
-          </Link>
-        </div>
-      </nav>
+      <Navbar page="panchang" showBack />
+      
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '44px 24px 80px', position: 'relative', zIndex: 1 }}>
 
