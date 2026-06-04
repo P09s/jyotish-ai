@@ -1,6 +1,7 @@
 // app/components/Navbar.tsx
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Sun, ArrowLeft, LogOut, ChevronLeft } from 'lucide-react'
 import { ThemeToggle } from '@/app/components/ThemeProvider'
 import HelpButton from '@/app/components/HelpButton'
@@ -23,7 +24,7 @@ export default function Navbar({ page, title, showBack = true, extra }: NavbarPr
       <nav style={navBase}>
         <Brand />
         <ControlPill>
-          <ThemeToggle />
+          <ThemeToggle showSeparator={true} />
           <HelpButton page={page} />
           {extra}
         </ControlPill>
@@ -68,12 +69,11 @@ export default function Navbar({ page, title, showBack = true, extra }: NavbarPr
       {/* Right: icon pill */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         <ControlPill>
-          <ThemeToggle />
+          <ThemeToggle showSeparator={true} />
           <HelpButton page={page} />
           {extra}
         </ControlPill>
       </div>
-
       <MobileMedia />
     </nav>
   )
@@ -84,14 +84,19 @@ export default function Navbar({ page, title, showBack = true, extra }: NavbarPr
 function Brand() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <Sun size={16} color="var(--orange)" strokeWidth={1.5} />
-      <span className="serif" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>
-        Daivam
+      <Image 
+        src="/logo.png" 
+        alt="Daivam Logo" 
+        width={24} 
+        height={24}
+        priority
+      />
+      <span className="serif" style={{ fontSize: 17, fontWeight: 500, color: 'var(--text-primary)' }}>
+        DAIVAM AI
       </span>
     </div>
   )
 }
-
 /** Frosted pill that groups all icon controls into one affordance */
 function ControlPill({ children }: { children: React.ReactNode }) {
   return (

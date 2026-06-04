@@ -74,10 +74,10 @@ function apply(theme: Theme) {
 // ─────────────────────────────────────────────────────────────
 export function ThemeToggle({ 
   className = '', 
-  isLast = false 
+  showSeparator = false 
 }: { 
   className?: string, 
-  isLast?: boolean 
+  showSeparator?: boolean 
 }) {
   const { theme, toggle } = useTheme()
   const isDark = theme === 'dark'
@@ -95,7 +95,7 @@ export function ThemeToggle({
         height: 34, 
         background: 'none', 
         border: 'none',
-        borderRight: isLast ? 'none' : '1px solid var(--border)',
+        borderRight: showSeparator ? '1px solid var(--border)' : 'none',
         cursor: 'pointer', 
         color: 'var(--text-secondary)',
         transition: 'color 0.2s',
@@ -114,7 +114,7 @@ export function ThemeToggle({
 // ─────────────────────────────────────────────────────────────
 function SunIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="1.5" aria-hidden="true"
       style={{ color: 'var(--orange, #F97316)' }}>
       <circle cx="12" cy="12" r="4" />
@@ -125,7 +125,7 @@ function SunIcon() {
 
 function MoonIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="1.5" aria-hidden="true"
       style={{ color: 'var(--orange, #F97316)' }}>
       <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />

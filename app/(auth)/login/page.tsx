@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/app/lib/supabase/client'
+import Image from 'next/image'
 import { Sun, Mail, Lock, ChevronRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { MotionDiv, PageTransition } from '@/app/components/motion-wrapper'
@@ -80,14 +81,13 @@ export default function LoginPage() {
           background: 'transparent',
         }}>
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Sun size={14} color="var(--orange)" strokeWidth={1.5} />
-            </div>
+          <Image 
+                src="/logo.png" 
+                alt="Daivam Logo" 
+                width={24} 
+                height={24}
+                priority
+              />
             <span className="serif" style={{ fontSize: 16, fontWeight: 600, color: 'var(--white)' }}>
               Daivam
             </span>
@@ -113,7 +113,13 @@ export default function LoginPage() {
               background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.25)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Sun size={22} color="var(--orange)" strokeWidth={1.5} />
+              <Image 
+                src="/logo.png" 
+                alt="Daivam Logo" 
+                width={24} 
+                height={24}
+                priority
+              />
             </div>
             <h1 className="login-h1 serif" style={{
               fontSize: 30, fontWeight: 600,

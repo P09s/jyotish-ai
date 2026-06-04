@@ -1,5 +1,6 @@
 // app/page.tsx
 import Link from 'next/link'
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/server'
 import type { Metadata } from 'next'
@@ -8,7 +9,7 @@ import { ThemeToggle } from '@/app/components/ThemeProvider'
 import '@/app/globals.css'
 
 export const metadata: Metadata = {
-  title: 'Daivam — Free Vedic Kundali & AI Astrologer',
+  title: 'DAIVAM AI',
   description:
     'Generate your free Janam Kundali online in seconds. AI-powered Vedic astrology for career, marriage, health and destiny. Based on your exact birth date, time and place.',
   alternates: { canonical: 'https://daivam.app' },
@@ -112,15 +113,15 @@ const TRUST_ITEMS = [
 ]
 
 const KHOUSES = [
-  { num: '12', planet: 'Ket',       corner: 'corner'  },
-  { num: '1',  planet: 'Lag',       corner: ''        },
+  { num: '12', planet: 'Ket',          corner: 'corner'  },
+  { num: '1',  planet: 'Lag',          corner: ''        },
   { num: '2',  planet: 'Sun\u00A0Mer', corner: 'corner2' },
-  { num: '11', planet: 'Sat',       corner: ''        },
-  { num: '',   planet: '',          corner: 'center'  },
-  { num: '3',  planet: 'Ven',       corner: ''        },
-  { num: '10', planet: 'Mar',       corner: 'corner2' },
-  { num: '9',  planet: 'Jup',       corner: ''        },
-  { num: '4',  planet: 'Moon',      corner: 'corner'  },
+  { num: '11', planet: 'Sat',          corner: ''        },
+  { num: '',   planet: '',             corner: 'center'  },
+  { num: '3',  planet: 'Ven',          corner: ''        },
+  { num: '10', planet: 'Mar',          corner: 'corner2' },
+  { num: '9',  planet: 'Jup',          corner: ''        },
+  { num: '4',  planet: 'Moon',         corner: 'corner'  },
 ]
 
 export default async function Home() {
@@ -134,8 +135,8 @@ export default async function Home() {
       {/* ── Navbar ── */}
       <nav className="lp-nav" role="navigation" aria-label="Main navigation">
         <Link href="/" className="lp-nav-brand" aria-label="Daivam home">
-          <div className="lp-nav-orb" aria-hidden="true"><SunIcon /></div>
-          <span className="lp-nav-name">Daivam</span>
+          <Image src="/logo.png" alt="Daivam Logo" width={24} height={24} priority />
+          <span className="lp-nav-name">DAIVAM AI</span>
         </Link>
         <div className="lp-nav-links">
           <a href="#how" className="lp-nav-link">How it works</a>
@@ -144,6 +145,7 @@ export default async function Home() {
         </div>
         <div className="lp-nav-actions">
           <ThemeToggle />
+          <span className="lp-nav-divider" aria-hidden="true" />
           <Link href="/login" className="btn-ghost nav-signin-btn">Sign in</Link>
           <Link href="/signup" className="btn-primary nav-cta-btn">
             <span>Get started</span><span className="hide-mobile">&nbsp;</span> <ArrowRight size={14} />
@@ -276,8 +278,16 @@ export default async function Home() {
           </p>
           <div className="chat-window" role="region" aria-label="Sample conversation">
             <div className="chat-titlebar">
-              <div className="chat-avatar" aria-hidden="true"><SunIcon /></div>
-              <span className="chat-name">Daivam Astrologer</span>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: 'rgba(249,115,22,0.1)',
+                border: '1px solid rgba(249,115,22,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Image src="/logo.png" alt="Daivam Logo" width={16} height={16} />
+              </div>
+              <span className="chat-name">DAIVAM AI Astrologer</span>
               <div className="online-pill">
                 <span className="online-dot" aria-hidden="true" /> online
               </div>
@@ -287,14 +297,30 @@ export default async function Home() {
                 When is a good time to change careers?
               </div>
               <div className="msg-ai" id="lp-msg2" style={{ opacity: 0, transition: 'opacity 0.4s' }}>
-                <div className="chat-avatar" aria-hidden="true"><SunIcon /></div>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: 'rgba(249,115,22,0.1)',
+                  border: '1px solid rgba(249,115,22,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Image src="/logo.png" alt="Daivam Logo" width={16} height={16} />
+                </div>
                 <div className="msg-text" id="lp-msg2-text" />
               </div>
               <div className="msg-user" id="lp-msg3" style={{ opacity: 0, transition: 'opacity 0.4s' }}>
                 What about marriage — is there a good period coming?
               </div>
               <div className="msg-ai" id="lp-msg4" style={{ opacity: 0, transition: 'opacity 0.4s' }}>
-                <div className="chat-avatar" aria-hidden="true"><SunIcon /></div>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: 'rgba(249,115,22,0.1)',
+                  border: '1px solid rgba(249,115,22,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Image src="/logo.png" alt="Daivam Logo" width={16} height={16} />
+                </div>
                 <div className="msg-text" id="lp-msg4-text" />
               </div>
             </div>
@@ -329,9 +355,13 @@ export default async function Home() {
       <div className="cta-section reveal">
         <div className="cta-box">
           <div className="cta-top-glow" aria-hidden="true" />
-          <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'var(--orange-glow)', border: '1px solid var(--orange-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 26px' }} aria-hidden="true">
-            <SunIcon />
-          </div>
+          <Image
+            src="/logo-full.png"
+            alt="Daivam Logo"
+            width={120}
+            height={120}
+            style={{ margin: '0 auto 14px', display: 'block' }}
+          />
           <span className="cta-shloka deva" aria-label="Bhagavad Gita 4.7 in Sanskrit">
             यदा यदा हि धर्मस्य ग्लानिर्भवति भारत।<br />
             अभ्युत्थानमधर्मस्य तदात्मानं सृजाम्यहम्॥
@@ -353,19 +383,80 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* ── Footer ── */}
+      {/* ══════════════════════════════════════════════
+          FOOTER — Redesigned 2026
+      ══════════════════════════════════════════════ */}
       <footer className="lp-footer">
-        <div className="lp-footer-inner">
+
+        {/* Top: brand col | divider | link cols */}
+        <div className="lp-footer-top">
+
+          {/* Brand + social + newsletter */}
           <div className="lp-footer-brand-col">
             <Link href="/" className="footer-brand" aria-label="Daivam home">
-              <div className="lp-nav-orb" aria-hidden="true"><SunIcon /></div>
-              <span style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 17, color: 'var(--cream)', letterSpacing: '0.06em' }}>Daivam</span>
+              <Image
+                src="/logo.png"
+                alt="Daivam"
+                width={28}
+                height={28}
+              />
+              <span className="lp-footer-brand-name">DAIVAM AI</span>
             </Link>
-            <p className="lp-footer-desc">
+
+            <p className="lp-footer-tagline">
               Ancient Jyotish wisdom,<br />illuminated by modern AI.
             </p>
-            <p className="lp-footer-copy">© 2026 Daivam. All rights reserved.</p>
+
+            {/* Social — LinkedIn only for now */}
+            <div className="lp-footer-social">
+              <a
+                href="https://linkedin.com/company/daivam-ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lp-footer-social-btn"
+                aria-label="Follow on LinkedIn"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/>
+                  <circle cx="4" cy="4" r="2"/>
+                </svg>
+              </a>
+              <a
+                href="mailto:hello@daivam.app"
+                className="lp-footer-social-btn"
+                aria-label="Email us"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </a>
+            </div>
+
+            {/* Newsletter micro-CTA */}
+            <div className="lp-footer-newsletter">
+              <p className="lp-footer-nl-label">Weekly forecast</p>
+              <p className="lp-footer-nl-desc">
+                Get your personalised planetary forecast every Monday morning.
+              </p>
+              <div className="lp-footer-nl-row">
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  className="lp-footer-nl-input"
+                  aria-label="Email address for weekly forecast"
+                />
+                <button className="lp-footer-nl-btn" type="button">
+                  Subscribe
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* Vertical divider (desktop only) */}
+          <div className="lp-footer-vdivider" aria-hidden="true" />
+
+          {/* Link columns */}
           <div className="lp-footer-links-wrap">
             <div className="lp-footer-col">
               <p className="lp-footer-col-label">Product</p>
@@ -390,12 +481,18 @@ export default async function Home() {
             </div>
           </div>
         </div>
-        <div className="lp-footer-bottom">
-          <span className="lp-footer-bottom-text">Rooted in Vedic tradition &nbsp;·&nbsp; Powered by modern AI</span>
-          <span className="lp-footer-bottom-text">Made with 🙏 for seekers everywhere</span>
-        </div>
-      </footer>
 
+        {/* Bottom bar */}
+        <div className="lp-footer-bottom">
+          <span className="lp-footer-bottom-text">© 2026 DAIVAM AI. All rights reserved.</span>
+          <span className="lp-footer-bottom-center">Rooted in Vedic tradition · Powered by modern AI</span>
+          <div className="lp-footer-bottom-links">
+            <Link href="/privacy" className="lp-footer-bottom-link">Privacy Policy</Link>
+            <Link href="/terms" className="lp-footer-bottom-link">Terms of Service</Link>
+          </div>
+        </div>
+
+      </footer>
       <LandingScripts />
     </div>
   )
