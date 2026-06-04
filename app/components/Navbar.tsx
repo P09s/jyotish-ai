@@ -90,8 +90,15 @@ function Brand() {
         width={24} 
         height={24}
         priority
+        style={{ display: 'block' }}   // ← kills inline baseline gap
       />
-      <span className="serif" style={{ fontSize: 17, fontWeight: 500, color: 'var(--text-primary)' }}>
+      <span className="serif" style={{ 
+        fontSize: 16,                  // ← slightly tighter, more modern
+        fontWeight: 500, 
+        color: 'var(--text-primary)',
+        letterSpacing: '0.04em',       // ← was implicit wider; pull it in
+        lineHeight: 1,                 // ← anchors text to center, not baseline
+      }}>
         DAIVAM AI
       </span>
     </div>

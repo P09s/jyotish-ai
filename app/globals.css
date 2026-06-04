@@ -426,46 +426,108 @@ img, svg, video, canvas { transform: translateZ(0); }
   transition: background 0.3s ease;
 }
 
-/* ── Nav ── */
+/* ── Nav — iOS 26 Liquid Glass ── */
 .landing-page .lp-nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  height: 64px;
+  height: 60px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 clamp(20px, 4vw, 56px);
-  background: var(--lp-nav-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid var(--lp-border);
+  padding: 0 clamp(16px, 4vw, 48px);
+  /* Liquid Glass: deeper blur, subtle tint, near-invisible border */
+  background: color-mix(in srgb, var(--lp-nav-bg) 80%, transparent);
+  backdrop-filter: blur(32px) saturate(1.6);
+  -webkit-backdrop-filter: blur(32px) saturate(1.6);
+  border-bottom: 1px solid color-mix(in srgb, var(--orange-border) 40%, var(--lp-border));
+  /* Soft top highlight — the iOS glass sheen */
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 1px 24px rgba(0,0,0,0.12);
   transition: background 0.3s ease, border-color 0.3s ease;
 }
-.landing-page .lp-nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+
+[data-theme="light"] .landing-page .lp-nav {
+  background: rgba(253,252,248,0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.7),
+    0 1px 16px rgba(28,20,12,0.06);
+}
+
+.landing-page .lp-nav-brand {
+  display: flex; align-items: center; gap: 9px; text-decoration: none;
+  padding: 5px 12px 5px 5px;
+  border-radius: 100px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+.landing-page .lp-nav-brand:hover {
+  border-color: var(--orange-border);
+  background: var(--orange-glow);
+}
+.landing-page .lp-nav-brand img {
+  display: block;
+  flex-shrink: 0;
+}
+
 .landing-page .lp-nav-orb {
   width: 32px; height: 32px; border-radius: 50%;
   border: 1px solid var(--orange-border);
   background: var(--orange-glow);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
+
 .landing-page .lp-nav-divider {
-  width: 1px;
-  height: 30px;
-  background: var(--lp-border2);
-  flex-shrink: 0;
-  margin-left: -6px;
+  display: none;
 }
+
 .landing-page .lp-nav-name {
   font-family: 'Libre Baskerville', serif;
-  font-size: 18px; font-weight: 400;
-  color: var(--cream); letter-spacing: 0.06em;
+  font-size: 17px; font-weight: 400;
+  color: var(--cream); letter-spacing: 0.05em;
 }
-.landing-page .lp-nav-links { display: flex; align-items: center; gap: 4px; }
+
+.landing-page .lp-nav-links {
+  display: flex; align-items: center; gap: 2px;
+  /* Floating glass pill for nav links — iOS 26 style */
+  background: color-mix(in srgb, var(--lp-bg2) 60%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--lp-border2);
+  border-radius: 100px;
+  padding: 4px 6px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+[data-theme="light"] .landing-page .lp-nav-links {
+  background: rgba(0,0,0,0.04);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
 .landing-page .lp-nav-link {
   font-size: 13px; font-weight: 400; color: var(--lp-text2);
-  padding: 6px 14px; border-radius: var(--r-sm);
-  text-decoration: none; transition: color 0.2s, background 0.2s;
+  padding: 5px 14px; border-radius: 100px;
+  text-decoration: none;
+  transition: color 0.2s, background 0.2s;
   letter-spacing: 0.01em;
+  white-space: nowrap;
 }
-.landing-page .lp-nav-link:hover { color: var(--lp-text1); background: var(--lp-bg2); }
-.landing-page .lp-nav-actions { display: flex; align-items: center; gap: 8px; }
+.landing-page .lp-nav-link:hover {
+  color: var(--lp-text1);
+  background: color-mix(in srgb, var(--orange-glow) 80%, transparent);
+}
+
+.landing-page .lp-nav-actions {
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* Action buttons inside nav — glass pill grouping */
+.landing-page .lp-nav-actions .btn-ghost.nav-signin-btn {
+  font-size: 13px; padding: 6px 16px; border-radius: 100px;
+  border-color: var(--lp-border2);
+}
+
+.landing-page .lp-nav-actions .btn-primary.nav-cta-btn {
+  font-size: 13px; padding: 7px 18px; border-radius: 100px;
+  box-shadow: 0 2px 12px rgba(249,115,22,0.3);
+}
 
 /* ── Landing buttons ── */
 .landing-page .btn-ghost {
@@ -724,9 +786,9 @@ img, svg, video, canvas { transform: translateZ(0); }
 /* Top section: brand + newsletter + links */
 .landing-page .lp-footer-top {
   max-width: 1200px; margin: 0 auto;
-  padding: clamp(52px,6vw,80px) clamp(24px,5vw,64px) clamp(40px,4vw,56px);
+  padding: clamp(52px,6vw,80px) clamp(20px,5vw,64px) clamp(40px,4vw,56px);
   display: grid;
-  grid-template-columns: 260px 1px 1fr;
+  grid-template-columns: minmax(0, 260px) 1px 1fr;
   gap: 0 48px;
   align-items: start;
 }
@@ -784,25 +846,36 @@ img, svg, video, canvas { transform: translateZ(0); }
   font-size: 12px; color: var(--footer-text); line-height: 1.6; margin-bottom: 12px;
 }
 .landing-page .lp-footer-nl-row {
-  display: flex; gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .landing-page .lp-footer-nl-input {
-  flex: 1; padding: 8px 12px;
+  flex: unset;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
   background: var(--footer-input-bg);
   border: 1px solid var(--footer-border);
-  border-radius: 8px; color: var(--text-primary);
-  font-size: 12px; outline: none;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
   transition: border-color 0.2s;
-  min-width: 0;
+  box-sizing: border-box;
 }
 .landing-page .lp-footer-nl-input:focus { border-color: var(--orange); }
 .landing-page .lp-footer-nl-input::placeholder { color: var(--text-muted); }
 .landing-page .lp-footer-nl-btn {
-  padding: 8px 14px;
-  background: var(--orange); color: #fff;
-  border: none; border-radius: 8px;
-  font-size: 12px; font-weight: 500;
-  cursor: pointer; white-space: nowrap;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
   transition: background 0.2s;
   flex-shrink: 0;
 }
@@ -994,7 +1067,6 @@ img, svg, video, canvas { transform: translateZ(0); }
   .landing-page .f-card.wide .f-icon { margin-bottom: 14px; }
   .landing-page .nav-signin-btn,
   .landing-page .nav-cta-btn { display: none; }
-  .landing-page .lp-nav-divider { display: none; }
 }
 
 @media (max-width: 440px) {
