@@ -1,15 +1,21 @@
 import { ImageResponse } from 'next/og'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
-export const runtime = 'edge'
+// 🚨 We removed `export const runtime = 'edge'` to use the standard Node.js runtime!
+// This gives you a 50MB limit instead of 1MB.
+
 export const alt = 'DAIVAM AI — Vedic Kundali Chart Generator'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 export default async function OGImage() {
-  // 1. Fetch the image directly as an ArrayBuffer (The official Next.js Edge method)
-  const logoData = await fetch(
-    new URL('../public/logo-full.png', import.meta.url)
-  ).then((res) => res.arrayBuffer())
+  // 1. Read the image using standard Node.js
+  const logoPath = join(process.cwd(), 'public', 'logo-full.png')
+  const logoBuffer = readFileSync(logoPath)
+  
+  // 2. Convert to Base64 so the HTML img tag can read it instantly
+  const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`
 
   return new ImageResponse(
     (
@@ -33,9 +39,9 @@ export default async function OGImage() {
           display: 'flex',
         }} />
 
-        {/* 2. Pass the ArrayBuffer to src. Removed objectFit and display: flex! */}
+        {/* 3. Use the Base64 string, keeping the clean CSS that Satori likes */}
         <img 
-          src={logoData as any} 
+          src={logoBase64} 
           height={280}
           style={{ marginBottom: 40 }} 
         />
