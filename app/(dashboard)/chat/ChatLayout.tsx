@@ -255,6 +255,7 @@ export default function ChatLayout({
           sessionId={activeSessionId || crypto.randomUUID()}
           onSessionCreated={handleSessionCreated}
           onOpenSidebar={() => setSidebarOpen(true)}
+          sidebarOpen={sidebarOpen}
         />
       </div>
 

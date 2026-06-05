@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
 
-const BASE_URL = 'https://daivam.app'
+const BASE_URL = 'https://daivam.vercel.app'
 
 export default function robots(): MetadataRoute.Robots {
   return {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Loader2, Sun, Menu, ArrowUp } from 'lucide-react'
+import { Send, Loader2, Sun, Menu, ArrowUp, PanelLeft } from 'lucide-react'
 import { createClient } from '@/app/lib/supabase/client'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -31,12 +31,14 @@ export default function ChatInterface({
   sessionId,
   onSessionCreated,
   onOpenSidebar,
+  sidebarOpen,
 }: {
   profile: Profile | null
   userId: string
   sessionId: string
   onSessionCreated: (sessionId: string, firstMessage: string) => void
   onOpenSidebar?: () => void
+  sidebarOpen?: boolean
 }) {
   const supabase = createClient()
 
@@ -46,9 +48,22 @@ export default function ChatInterface({
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState('')
   const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [pillVisible, setPillVisible] = useState(true)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const pillTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Delayed pill appearance after sidebar closes
+  useEffect(() => {
+    if (pillTimerRef.current) clearTimeout(pillTimerRef.current)
+    if (sidebarOpen) {
+      setPillVisible(false)
+    } else {
+      pillTimerRef.current = setTimeout(() => setPillVisible(true), 320)
+    }
+    return () => { if (pillTimerRef.current) clearTimeout(pillTimerRef.current) }
+  }, [sidebarOpen])
 
   // Markdown components
   const mdComponents = {
@@ -225,33 +240,49 @@ export default function ChatInterface({
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* ── Top bar: hamburger + session title ── */}
+      {/* ── In-flow Header Row with Pill ── */}
       <div style={{
-        flexShrink: 0, height: 48,
+        flexShrink: 0,
+        padding: '12px 16px 4px',
         display: 'flex', alignItems: 'center',
-        padding: '0 16px', gap: 10,
       }}>
         <button
           onClick={onOpenSidebar}
           style={{
-            width: 34, height: 34, borderRadius: 9, cursor: 'pointer',
-            background: 'transparent', border: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'background 0.2s', flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '6px 14px 6px 10px',
+            borderRadius: 100, cursor: 'pointer',
+            background: 'var(--bg-card)',
+            backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            color: 'var(--text-secondary)',
+            opacity: pillVisible ? 1 : 0,
+            transform: pillVisible ? 'translateX(0)' : 'translateX(-8px)',
+            pointerEvents: pillVisible ? 'auto' : 'none',
+            transition: 'opacity 0.25s ease, transform 0.25s ease, background 0.2s, border-color 0.2s, color 0.2s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-surface2)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-          title="Conversations"
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'var(--bg-surface2)'
+            e.currentTarget.style.color = 'var(--text-primary)'
+            e.currentTarget.style.borderColor = 'var(--orange-border)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'var(--bg-card)'
+            e.currentTarget.style.color = 'var(--text-secondary)'
+            e.currentTarget.style.borderColor = 'var(--border)'
+          }}
+          title="Open Conversations"
         >
-          {/* Changed color from hardcoded white to theme variable */}
-          <Menu size={17} color="var(--text-secondary)" strokeWidth={1.8} />
+          <PanelLeft size={18} strokeWidth={1.5} />
+          <div style={{ width: 1, height: 14, background: 'var(--border)' }} />
+          <span style={{
+            fontSize: 13, fontWeight: 400,
+            fontFamily: 'DM Sans, sans-serif', letterSpacing: '0.01em'
+          }}>
+            {profile?.full_name ? `${profile.full_name.split(' ')[0]}'s Kundali` : 'Daivam Astrologer'}
+          </span>
         </button>
-        <span style={{
-          fontSize: 13, color: 'var(--text-muted)',
-          fontFamily: 'DM Sans, sans-serif', letterSpacing: '0.01em'
-        }}>
-          {profile?.full_name ? `${profile.full_name.split(' ')[0]}'s Kundali` : 'Daivam Astrologer'}
-        </span>
       </div>
 
       {/* ── Messages ── */}
@@ -265,7 +296,7 @@ export default function ChatInterface({
 
           {/* Empty state */}
           {messages.length === 0 && (
-            <div style={{ textAlign: 'center', paddingTop: 40, paddingBottom: 32 }}>
+            <div style={{ textAlign: 'center', paddingTop: 32, paddingBottom: 32 }}>
               <div style={{
                 width: 56, height: 56, borderRadius: '50%',
                 margin: '0 auto 20px',
@@ -324,6 +355,7 @@ export default function ChatInterface({
             </div>
           )}
 
+
           {/* Message list */}
           {messages.map((m, i) => {
             const isLastAssistant = m.role === 'assistant' && i === messages.length - 1
@@ -360,7 +392,6 @@ export default function ChatInterface({
                 <div style={{
                   maxWidth: m.role === 'user' ? '72%' : '88%',
                   ...(m.role === 'user' ? {
-                    // User bubble: pill-style warm fill
                     padding: '12px 18px',
                     borderRadius: '20px 20px 5px 20px',
                     background: 'rgba(249,115,22,0.13)',
@@ -371,7 +402,6 @@ export default function ChatInterface({
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
                   } : {
-                    // Assistant: no bubble, just clean text
                     fontSize: 15,
                     lineHeight: 1.8,
                     color: 'var(--text-primary)',
@@ -505,7 +535,6 @@ export default function ChatInterface({
             >
               {loading
                 ? <Loader2 size={15} color="white" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
-                /* Changed color from hardcoded white/opacity to theme variables */
                 : <ArrowUp size={16} color={canSend ? 'white' : 'var(--text-muted)'} strokeWidth={2.5} />
               }
             </button>

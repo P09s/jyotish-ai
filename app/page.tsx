@@ -8,13 +8,6 @@ import LandingScripts from '@/app/components/LandingScripts'
 import { ThemeToggle } from '@/app/components/ThemeProvider'
 import '@/app/globals.css'
 
-export const metadata: Metadata = {
-  title: 'DAIVAM AI',
-  description:
-    'Generate your free Janam Kundali online in seconds. AI-powered Vedic astrology for career, marriage, health and destiny. Based on your exact birth date, time and place.',
-  alternates: { canonical: 'https://daivam.app' },
-}
-
 const SunIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
     <circle cx="12" cy="12" r="4" />
@@ -422,7 +415,7 @@ export default async function Home() {
                 </svg>
               </a>
               <a
-                href="mailto:hello@daivam.app"
+                href="mailto:hello@daivam.vercel.app"
                 className="lp-footer-social-btn"
                 aria-label="Email us"
               >

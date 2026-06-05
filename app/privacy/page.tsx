@@ -8,7 +8,7 @@ import '@/app/globals.css'
 export const metadata: Metadata = {
   title: 'Privacy Policy — Daivam',
   description: 'How Daivam collects, uses, and protects your personal information.',
-  alternates: { canonical: 'https://daivam.app/privacy' },
+  alternates: { canonical: 'https://daivam.vercel.app/privacy' },
 }
 
 const ArrowRight = ({ size = 16 }: { size?: number }) => (
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
             Daivam (&ldquo;Daivam&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) is a Vedic astrology platform
             that uses artificial intelligence to provide personalised astrological guidance. We are
             operated by Daivam Technologies. Our primary contact is{' '}
-            <a href="mailto:hello@daivam.app" className="legal-a">hello@daivam.app</a>.
+            <a href="mailto:hello@daivam.vercel.app" className="legal-a">hello@daivam.vercel.app</a>.
           </p>
         </div>
 
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
           </ul>
           <p className="legal-p">
             To exercise any right, email us at{' '}
-            <a href="mailto:privacy@daivam.app" className="legal-a">privacy@daivam.app</a>.
+            <a href="mailto:privacy@daivam.vercel.app" className="legal-a">privacy@daivam.vercel.app</a>.
             We will respond within 30 days.
           </p>
         </div>
@@ -166,7 +166,7 @@ export default function PrivacyPage() {
           <h2 className="legal-h2">10. Contact</h2>
           <p className="legal-p">
             Questions about this policy? Reach us at{' '}
-            <a href="mailto:privacy@daivam.app" className="legal-a">privacy@daivam.app</a> or
+            <a href="mailto:privacy@daivam.vercel.app" className="legal-a">privacy@daivam.vercel.app</a> or
             write to us at: Daivam Technologies, India.
           </p>
         </div>

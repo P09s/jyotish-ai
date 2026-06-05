@@ -6,17 +6,21 @@ import { ThemeProvider } from '@/app/components/ThemeProvider'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
-const BASE_URL = 'https://daivam.app'
+const BASE_URL = 'https://daivam.vercel.app'
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
 
   title: {
-    default: 'Daivam — Free Vedic Kundali Chart & AI Astrologer',
-    template: '%s | Daivam',
+    default: 'DAIVAM AI — Free Vedic Kundali Chart & AI Astrologer',
+    template: '%s | DAIVAM AI',
   },
   description:
     'Generate your free Vedic Kundali chart instantly. Get AI-powered Jyotish insights on career, marriage, health & destiny based on your birth chart. North Indian chart, Vimshottari Dasha, 9 planets.',
+    icons: {
+      icon: '/logo.png',
+      apple: '/logo.png',
+    },
 
   keywords: [
     'kundali', 'free kundali', 'vedic astrology', 'jyotish', 'birth chart',
@@ -26,16 +30,16 @@ export const metadata: Metadata = {
     'daivam', 'daivam ai', 'daivam astrology',
   ],
 
-  authors: [{ name: 'Daivam', url: BASE_URL }],
-  creator: 'Daivam',
-  publisher: 'Daivam',
+  authors: [{ name: 'Parag Sharma', url: BASE_URL }],
+  creator: 'Parag Sharma',
+  publisher: 'DAIVAM AI',
 
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     url: BASE_URL,
-    siteName: 'Daivam',
-    title: 'Daivam — Free Vedic Kundali & AI Astrologer',
+    siteName: 'DAIVAM AI',
+    title: 'DAIVAM AI — Free Vedic Kundali & AI Astrologer',
     description:
       'Enter your birth details. Get your Kundali chart + personalized Jyotish guidance powered by AI. Free forever.',
     images: [
@@ -43,14 +47,14 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Daivam — Vedic Kundali Chart Generator',
+        alt: 'DAIVAM AI — Vedic Kundali Chart Generator',
       },
     ],
   },
 
   twitter: {
     card: 'summary_large_image',
-    title: 'Daivam — Free Vedic Kundali & AI Astrologer',
+    title: 'DAIVAM AI — Free Vedic Kundali & AI Astrologer',
     description:
       'Generate your Kundali instantly. AI-powered Jyotish insights on career, relationships & destiny.',
     images: ['/og-image.png'],

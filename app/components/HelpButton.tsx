@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { HelpCircle, X, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat'
+type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat' | 'login' | 'signup'
 
 const HELP_DATA: Record<PageName, { title: string; content: React.ReactNode }> = {
   dashboard: {
@@ -70,7 +70,25 @@ const HELP_DATA: Record<PageName, { title: string; content: React.ReactNode }> =
         <p><strong>Tip:</strong> Ask specific questions like <em>"What does my current Jupiter dasha mean for my career?"</em> or <em>"When will my Sade Sati end?"</em></p>
       </>
     )
-  }
+  },
+  login: {
+    title: 'Welcome to Daivam',
+    content: (
+      <>
+        <p style={{ marginBottom: 12 }}>Sign in to access your saved birth chart, daily panchang, and AI astrologer.</p>
+        <p>If you don't have an account yet, you can create one for free to generate your exact Kundali.</p>
+      </>
+    )
+  },
+  signup: {
+    title: 'Creating Your Kundali',
+    content: (
+      <>
+        <p style={{ marginBottom: 12 }}>We need your exact birth details (date, time, and place) to calculate precise planetary positions for your Vedic chart.</p>
+        <p>Your data is kept private and is only used to generate your astrological readings.</p>
+      </>
+    )
+  },
 }
 
 export default function HelpButton({ 

@@ -8,7 +8,7 @@ import '@/app/globals.css'
 export const metadata: Metadata = {
   title: 'Terms of Service — Daivam',
   description: 'Terms and conditions for using the Daivam Vedic astrology platform.',
-  alternates: { canonical: 'https://daivam.app/terms' },
+  alternates: { canonical: 'https://daivam.vercel.app/terms' },
 }
 
 const ArrowRight = ({ size = 16 }: { size?: number }) => (
@@ -198,7 +198,7 @@ export default function TermsPage() {
           <h2 className="legal-h2">12. Contact</h2>
           <p className="legal-p">
             Questions about these Terms? Contact us at{' '}
-            <a href="mailto:hello@daivam.app" className="legal-a">hello@daivam.app</a>.
+            <a href="mailto:hello@daivam.vercel.app" className="legal-a">hello@daivam.vercel.app</a>.
           </p>
         </div>
 

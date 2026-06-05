@@ -83,25 +83,34 @@ export default function Navbar({ page, title, showBack = true, extra }: NavbarPr
 
 function Brand() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <Link 
+      href="/dashboard" 
+      style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 9, 
+        textDecoration: 'none',
+        padding: '5px 12px 5px 5px',
+        borderRadius: 100,
+      }}
+    >
       <Image 
         src="/logo.png" 
         alt="Daivam Logo" 
         width={24} 
         height={24}
         priority
-        style={{ display: 'block' }}   // ← kills inline baseline gap
+        style={{ display: 'block', flexShrink: 0 }}
       />
       <span className="serif" style={{ 
-        fontSize: 16,                  // ← slightly tighter, more modern
-        fontWeight: 500, 
+        fontSize: 17,                  
+        fontWeight: 400, 
         color: 'var(--text-primary)',
-        letterSpacing: '0.04em',       // ← was implicit wider; pull it in
-        lineHeight: 1,                 // ← anchors text to center, not baseline
+        letterSpacing: '0.05em',       
       }}>
         DAIVAM AI
       </span>
-    </div>
+    </Link>
   )
 }
 /** Frosted pill that groups all icon controls into one affordance */
@@ -138,14 +147,16 @@ const navBase: React.CSSProperties = {
   zIndex: 50,
   width: '100%',
   boxSizing: 'border-box',
-  padding: '0 20px',
-  height: 56,
+  padding: '0 clamp(16px, 4vw, 48px)',
+  height: 60,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  background: 'var(--bg-nav)',
-  backdropFilter: 'blur(24px)',
-  borderBottom: '1px solid var(--border)',
+  background: 'color-mix(in srgb, var(--bg-nav) 80%, transparent)',
+  backdropFilter: 'blur(32px) saturate(1.6)',
+  WebkitBackdropFilter: 'blur(32px) saturate(1.6)',
+  borderBottom: '1px solid color-mix(in srgb, var(--orange-border) 40%, var(--border))',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 24px rgba(0,0,0,0.12)',
 }
 
 const pageTitles: Record<string, string> = {
