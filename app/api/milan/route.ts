@@ -26,23 +26,46 @@ const VARNA: Record<string, number> = {
 }
 
 // 2. Vashya (2 points) — dominance/attraction
+// Whole-sign approximation of the 5 classical Vashya categories.
+// (Note: Leo/Sagittarius/Capricorn are traditionally split by degree across
+// categories — this whole-sign version is a simplification, not a bug.)
+// 0 = Chatuspada (quadruped), 1 = Manava (human), 2 = Jalachar (aquatic),
+// 3 = Vanachar (wild — Leo only), 4 = Keeta (insect — Scorpio only)
 const VASHYA_GROUP: Record<string, number> = {
-  Aries:0, Taurus:1, Gemini:2, Cancer:3, Leo:0, Virgo:2,
-  Libra:2, Scorpio:3, Sagittarius:0, Capricorn:1, Aquarius:1, Pisces:3,
+  Aries:0, Taurus:0, Sagittarius:0, Capricorn:0,
+  Gemini:1, Virgo:1, Libra:1, Aquarius:1,
+  Cancer:2, Pisces:2,
+  Leo:3,
+  Scorpio:4,
 }
-// Mutual attraction map [groupA][groupB]
+// Mutual attraction score [groupA][groupB], 0-2 points
 const VASHYA_SCORE: number[][] = [
-  [2,0,0,1,2,0],  // 0-quadruped
-  [0,2,0,0,0,1],  // 1-quadruped2
-  [0,0,2,0,0,0],  // 2-human
-  [1,0,0,2,0,0],  // 3-water
+  [2, 1, 1, 0, 0], // 0 quadruped
+  [1, 2, 1, 0, 0], // 1 human
+  [1, 1, 2, 0, 1], // 2 aquatic
+  [0, 0, 0, 2, 0], // 3 wild (Leo)
+  [0, 0, 1, 0, 2], // 4 insect (Scorpio)
 ]
 
 // 3. Tara (3 points) — birth star compatibility
+// Classical tara groups (1-indexed, counting inclusive from source to target nakshatra, mod 9):
+// 1 Janma(bad) 2 Sampat(good) 3 Vipat(bad) 4 Kshema(good) 5 Pratyak(bad)
+// 6 Sadhaka(good) 7 Vadha(bad) 8 Mitra(good) 9 Parama Mitra(good)
+function taraGroup(nakFrom: number, nakTo: number): number {
+  const diff = ((nakTo - nakFrom + 27) % 27) + 1 // inclusive count, 1-27
+  const group = diff % 9
+  return group === 0 ? 9 : group
+}
+
 function calcTara(nakA: number, nakB: number): number {
-  const tara = ((nakB - nakA + 27) % 27) % 9
-  const good = [0,2,3,4,5,6] // 1,3,4,5,6,7th are good (0-indexed)
-  return good.includes(tara) ? 3 : 0
+  const GOOD_GROUPS = [2, 4, 6, 8, 9]
+  const groupAtoB = taraGroup(nakA, nakB)
+  const groupBtoA = taraGroup(nakB, nakA)
+  const goodAtoB = GOOD_GROUPS.includes(groupAtoB)
+  const goodBtoA = GOOD_GROUPS.includes(groupBtoA)
+  if (goodAtoB && goodBtoA) return 3
+  if (goodAtoB || goodBtoA) return 1.5
+  return 0
 }
 
 // 4. Yoni (4 points) — sexual/nature compatibility
@@ -113,17 +136,36 @@ const PLANET_FRIENDS: Record<string, string[]> = {
   Venus:  ['Mercury','Saturn'],
   Saturn: ['Mercury','Venus'],
 }
+// Naisargika Maitri — explicit enemies; anything not listed as friend or enemy is neutral
+const PLANET_ENEMIES: Record<string, string[]> = {
+  Sun:    ['Venus','Saturn'],
+  Moon:   [],
+  Mars:   ['Mercury'],
+  Mercury:['Moon'],
+  Jupiter:['Mercury','Venus'],
+  Venus:  ['Sun','Moon'],
+  Saturn: ['Sun','Moon','Mars'],
+}
 const SIGN_LORD: Record<string, string> = {
   Aries:'Mars', Taurus:'Venus', Gemini:'Mercury', Cancer:'Moon',
   Leo:'Sun', Virgo:'Mercury', Libra:'Venus', Scorpio:'Mars',
   Sagittarius:'Jupiter', Capricorn:'Saturn', Aquarius:'Saturn', Pisces:'Jupiter',
 }
 
-function friendship(a: string, b: string): 'friend'|'neutral'|'enemy' {
+function relationOf(a: string, b: string): 'friend'|'neutral'|'enemy' {
   if (a === b) return 'friend'
   if (PLANET_FRIENDS[a]?.includes(b)) return 'friend'
-  if (PLANET_FRIENDS[b]?.includes(a)) return 'neutral'
-  return 'enemy'
+  if (PLANET_ENEMIES[a]?.includes(b)) return 'enemy'
+  return 'neutral'
+}
+
+// Classical rule: friend in one direction + enemy in the other = neutral overall
+function friendship(a: string, b: string): 'friend'|'neutral'|'enemy' {
+  const ab = relationOf(a, b)
+  const ba = relationOf(b, a)
+  if (ab === 'friend' && ba === 'friend') return 'friend'
+  if (ab === 'enemy' && ba === 'enemy') return 'enemy'
+  return 'neutral'
 }
 
 function calcGrahaMaitri(moonSignA: string, moonSignB: string): number {
@@ -157,23 +199,26 @@ function calcGana(nakA: string, nakB: string): number {
   return 3
 }
 
-// 7. Bhakoot (7 points) — moon sign relationship
+// 7. Bhakoot (7 points) — moon sign relationship with classical cancellation
 function calcBhakoot(moonSignA: string, moonSignB: string): number {
   const idxA = SIGNS.indexOf(moonSignA)
   const idxB = SIGNS.indexOf(moonSignB)
   if (idxA < 0 || idxB < 0) return 3
   const diff = ((idxB - idxA + 12) % 12) + 1
   const reverse = ((idxA - idxB + 12) % 12) + 1
-  // 2-12, 5-9, 6-8 are inauspicious
   const bad = [[2,12],[5,9],[6,8]]
-  for (const [a,b] of bad) {
-    if ((diff===a&&reverse===b)||(diff===b&&reverse===a)) return 0
-  }
-  if (diff === 1) return 7 // same sign
-  return 7 // generally 7 if not bad
+  const isDosha = bad.some(([a,b]) => (diff===a&&reverse===b)||(diff===b&&reverse===a))
+  if (!isDosha) return 7
+
+  // Bhakoot Dosha present — check classical cancellation (BPHS, Muhurta Chintamani)
+  const lordA = SIGN_LORD[moonSignA]
+  const lordB = SIGN_LORD[moonSignB]
+  if (lordA === lordB) return 7        // same Rashi lord — fully cancelled
+  if (friendship(lordA, lordB) === 'friend') return 3.5  // friendly lords — softened
+  return 0
 }
 
-// 8. Nadi (8 points) — health/progeny
+// 8. Nadi (8 points) — health/progeny with classical cancellation
 const NADI: Record<string, 'Aadi'|'Madhya'|'Antya'> = {
   Ashwini:'Aadi', Ardra:'Aadi', Punarvasu:'Aadi', Uttara_Phalguni:'Aadi',
   Hasta:'Aadi', Jyeshtha:'Aadi', Mula:'Aadi', Shatabhisha:'Aadi', Purva_Bhadrapada:'Aadi',
@@ -192,11 +237,19 @@ const NADI_CLEAN: Record<string, 'Aadi'|'Madhya'|'Antya'> = {
   'Swati':'Antya','Vishakha':'Antya','Uttara Ashadha':'Antya','Shravana':'Antya','Revati':'Antya',
 }
 
-function calcNadi(nakA: string, nakB: string): number {
+function calcNadi(nakA: string, nakB: string, moonSignA: string, moonSignB: string): number {
   const nA = NADI_CLEAN[nakA]
   const nB = NADI_CLEAN[nakB]
   if (!nA || !nB) return 4
-  return nA === nB ? 0 : 8
+  if (nA !== nB) return 8 // different Nadi — no dosha
+
+  const sameRashi = moonSignA === moonSignB
+  const sameNakshatra = nakA === nakB
+
+  // Classical exceptions (Jyotish Tattwa, Vashishtha Samhita)
+  if (sameRashi && !sameNakshatra) return 8   // same Rashi, diff Nakshatra → cancelled
+  if (sameNakshatra && !sameRashi) return 8   // same Nakshatra, diff Rashi → cancelled
+  return 0 // same Nakshatra AND same Rashi — dosha stands, most severe case
 }
 
 // ── Nakshatra index from moon longitude ───────────────────────────────────────
@@ -224,16 +277,16 @@ function calcAshtakoot(chartA: any, chartB: any) {
   const varnaB = VARNA[moonSignB] ?? 1
   const varnaScore = varnaA >= varnaB ? 1 : 0
 
-  const vashyaA = VASHYA_GROUP[moonSignA] ?? 0
-  const vashyaB = VASHYA_GROUP[moonSignB] ?? 0
-  const vashyaScore = (vashyaA === vashyaB) ? 2 : (Math.abs(vashyaA - vashyaB) <= 1 ? 1 : 0)
+  const vashyaA = VASHYA_GROUP[moonSignA] ?? 1
+  const vashyaB = VASHYA_GROUP[moonSignB] ?? 1
+  const vashyaScore = VASHYA_SCORE[vashyaA]?.[vashyaB] ?? 1
 
   const taraScore     = calcTara(nakIdxA < 0 ? 0 : nakIdxA, nakIdxB < 0 ? 0 : nakIdxB)
   const yoniScore     = calcYoni(nakA, nakB)
   const maitriScore   = calcGrahaMaitri(moonSignA, moonSignB)
   const ganaScore     = calcGana(nakA, nakB)
   const bhakootScore  = calcBhakoot(moonSignA, moonSignB)
-  const nadiScore     = calcNadi(nakA, nakB)
+  const nadiScore     = calcNadi(nakA, nakB, moonSignA, moonSignB)
 
   const total = varnaScore + vashyaScore + taraScore + yoniScore + maitriScore + ganaScore + bhakootScore + nadiScore
   const percent = Math.round((total / 36) * 100)
@@ -256,6 +309,22 @@ function calcAshtakoot(chartA: any, chartB: any) {
   }
 }
 
+// ── Manglik (Kuja) Dosha — separate from the 36-point Ashtakoot ───────────────
+function checkManglik(chart: any) {
+  const mars = chart.planets?.find((p: any) => p.name === 'Mars')
+  if (!mars) return { isManglik: false, house: null, cancelled: false, reason: 'No Mars data' }
+
+  const doshaHouses = [1, 2, 4, 7, 8, 12] // from Lagna
+  const triggered = doshaHouses.includes(mars.house)
+  if (!triggered) return { isManglik: false, house: mars.house, cancelled: false, reason: 'Mars not in a Manglik house' }
+
+  // Cancellation: Mars in own sign (Aries/Scorpio) or exaltation sign (Capricorn)
+  if (['Aries','Scorpio','Capricorn'].includes(mars.sign)) {
+    return { isManglik: false, house: mars.house, cancelled: true, reason: `Mars in ${mars.sign} (own/exaltation) nullifies Manglik Dosha` }
+  }
+  return { isManglik: true, house: mars.house, cancelled: false, reason: `Mars in house ${mars.house} from Lagna` }
+}
+
 // ── POST ──────────────────────────────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
@@ -267,14 +336,22 @@ export async function POST(request: Request) {
     if (!chartA || !chartB) return NextResponse.json({ error: 'Both charts required' }, { status: 400 })
 
     const ashtakoot = calcAshtakoot(chartA, chartB)
+    const manglikA = checkManglik(chartA)
+    const manglikB = checkManglik(chartB)
+    const manglikStatus = {
+      personA: manglikA,
+      personB: manglikB,
+      mutuallyCancelled: manglikA.isManglik && manglikB.isManglik, // both Manglik = cancels out
+      requiresRemedy: manglikA.isManglik !== manglikB.isManglik,   // only one is Manglik
+    }
 
     // ── Groq AI narrative ────────────────────────────────────────
     const systemPrompt = `You are Daivam — a warm, wise Vedic astrologer specialising in Kundali Milan (compatibility matching).
 You speak with calm authority, referencing classical texts like Brihat Parashara Hora Shastra.
 Keep your response to exactly 3 short paragraphs:
-1. Overall compatibility verdict (mention the Ashtakoot score and what it means)
+1. Overall compatibility verdict (mention the Ashtakoot score, Manglik status, and what it means)
 2. Key strengths in this pairing (reference specific kootas that scored well)
-3. Areas needing awareness + practical guidance (reference kootas that scored low, give upaya/remedy if severe)
+3. Areas needing awareness + practical guidance (reference kootas that scored low or Manglik dosha if present, give upaya/remedy if severe)
 Use Sanskrit terms with English in brackets. Be warm, not fatalistic. Never be longer than 180 words total.`
 
     const userMsg = `Analyse this Kundali Milan:
@@ -284,6 +361,9 @@ Person B (${nameB || 'Person B'}): Moon in ${ashtakoot.moonSignB}, Nakshatra ${a
 Ashtakoot Score: ${ashtakoot.total}/36 (${ashtakoot.percent}%)
 Koota breakdown:
 ${ashtakoot.kootas.map(k => `- ${k.name}: ${k.score}/${k.max}`).join('\n')}
+
+Manglik Status: ${nameA || 'Person A'} ${manglikA.isManglik ? 'is Manglik' : 'is not Manglik'}${manglikA.cancelled ? ' (cancelled: ' + manglikA.reason + ')' : ''}; ${nameB || 'Person B'} ${manglikB.isManglik ? 'is Manglik' : 'is not Manglik'}${manglikB.cancelled ? ' (cancelled: ' + manglikB.reason + ')' : ''}.
+${manglikStatus.mutuallyCancelled ? 'Both are Manglik — dosha is mutually cancelled per classical rule.' : ''}
 
 Provide a personalised compatibility reading.`
 
@@ -305,11 +385,11 @@ Provide a personalised compatibility reading.`
       name_a: nameA ?? 'Person A',
       name_b: nameB ?? 'Person B',
       ashtakoot_score: ashtakoot.total,
-      result_data: { ashtakoot, narrative },
+      result_data: { ashtakoot, manglikStatus, narrative },
       created_at: new Date().toISOString(),
     }).select()
 
-    return NextResponse.json({ success: true, ashtakoot, narrative })
+    return NextResponse.json({ success: true, ashtakoot, manglikStatus, narrative })
   } catch (err: unknown) {
     console.error('Milan error:', err)
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Milan calculation failed' }, { status: 500 })
