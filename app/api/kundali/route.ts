@@ -158,6 +158,96 @@ function calcDasha(moonSid: number, birthDateUTC: Date) {
   return dashas
 }
 
+// ── Yogini Dasha (BPHS — 36-year, 8-fold cycle) ────────────────────────────────
+const YOGINIS = ['Mangala','Pingala','Dhanya','Bhramari','Bhadrika','Ulka','Siddha','Sankata']
+const YOGINI_PLANET: Record<string,string> = {
+  Mangala:'Moon', Pingala:'Sun', Dhanya:'Jupiter', Bhramari:'Mars',
+  Bhadrika:'Mercury', Ulka:'Saturn', Siddha:'Venus', Sankata:'Rahu',
+}
+const YOGINI_YEARS: Record<string,number> = {
+  Mangala:1, Pingala:2, Dhanya:3, Bhramari:4, Bhadrika:5, Ulka:6, Siddha:7, Sankata:8,
+}
+
+function calcYoginiAntardasha(mdYogini: string, mdStart: string) {
+  const mdYears  = YOGINI_YEARS[mdYogini]
+  const startIdx = YOGINIS.indexOf(mdYogini)
+  const MS_PER_YEAR = 365.25 * 24 * 3600 * 1000
+  const now = new Date()
+  let cur = new Date(mdStart + 'T00:00:00Z').getTime()
+
+  return Array.from({ length: 8 }, (_, i) => {
+    const adYogini    = YOGINIS[(startIdx + i) % 8]
+    const adYears     = (YOGINI_YEARS[adYogini] * mdYears) / 36
+    const durationMs  = adYears * MS_PER_YEAR
+    const end         = cur + durationMs
+    const entry = {
+      yogini:    adYogini,
+      planet:    YOGINI_PLANET[adYogini],
+      years:     parseFloat(adYears.toFixed(3)),
+      start:     new Date(cur).toISOString().split('T')[0],
+      end:       new Date(end).toISOString().split('T')[0],
+      isCurrent: now.getTime() >= cur && now.getTime() < end,
+    }
+    cur = end
+    return entry
+  })
+}
+
+// Starting Yogini formula (BPHS, cross-verified against multiple traditional sources):
+// remainder of (Nakshatra number [1-27] + 3) / 8 selects the starting Yogini;
+// a remainder of 0 maps to the 8th Yogini (Sankata), not a "0th" position.
+function calcYoginiDasha(moonSid: number, birthDateUTC: Date) {
+  const nak  = getNakshatra(moonSid)
+  const span = 360 / 27
+  const fractionElapsed = (moonSid % span) / span
+
+  const nakshatraNumber = nak.index + 1 // convert 0-indexed → 1-27
+  let remainder = (nakshatraNumber + 3) % 8
+  if (remainder === 0) remainder = 8
+  const startIdx = remainder - 1 // 0-indexed into YOGINIS
+
+  const startYogini    = YOGINIS[startIdx]
+  const startYears     = YOGINI_YEARS[startYogini]
+  const yearsRemaining = startYears * (1 - fractionElapsed)
+
+  const MS_PER_YEAR = 365.25 * 24 * 3600 * 1000
+  const now = new Date()
+
+  const dashas: any[] = []
+  let cur = birthDateUTC.getTime()
+
+  const end0  = cur + yearsRemaining * MS_PER_YEAR
+  const isCur0 = now.getTime() >= cur && now.getTime() <= end0
+  dashas.push({
+    yogini: startYogini, planet: YOGINI_PLANET[startYogini], years: startYears,
+    start: new Date(cur).toISOString().split('T')[0],
+    end:   new Date(end0).toISOString().split('T')[0],
+    isCurrent: isCur0,
+    yearsRemaining: parseFloat(yearsRemaining.toFixed(2)),
+  })
+  cur = end0
+
+  for (let i = 1; i < 8; i++) {
+    const yogini = YOGINIS[(startIdx + i) % 8]
+    const years  = YOGINI_YEARS[yogini]
+    const end    = cur + years * MS_PER_YEAR
+    const isCur  = now.getTime() >= cur && now.getTime() <= end
+    dashas.push({
+      yogini, planet: YOGINI_PLANET[yogini], years,
+      start: new Date(cur).toISOString().split('T')[0],
+      end:   new Date(end).toISOString().split('T')[0],
+      isCurrent: isCur,
+    })
+    cur = end
+  }
+
+  dashas.forEach(d => {
+    d.antardashas = calcYoginiAntardasha(d.yogini, d.start)
+  })
+
+  return dashas
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getSign(lon: number) {
   const idx = Math.floor((lon + 0.000001) / 30)
@@ -284,6 +374,11 @@ const astroTime = new Astronomy.AstroTime(dateUTC)
     const currentAntardasha = currentDasha.antardashas?.find((ad: any) => ad.isCurrent)
                          ?? currentDasha.antardashas?.[0]
 
+    const yoginiDashas = calcYoginiDasha(moonSid, dateUTC)
+    const currentYoginiDasha = yoginiDashas.find(d => d.isCurrent) ?? yoginiDashas[0]
+    const currentYoginiAntardasha = currentYoginiDasha.antardashas?.find((ad: any) => ad.isCurrent)
+                                ?? currentYoginiDasha.antardashas?.[0]
+
     const chartData = {
       calculated_at: new Date().toISOString(),
       birth: { date: date_of_birth, time: time_of_birth, latitude, longitude, timezone },
@@ -301,6 +396,8 @@ const astroTime = new Astronomy.AstroTime(dateUTC)
       moon_nakshatra:    moonNak,
       vimshottari_dasha: dashas,
       current_dasha:     currentDasha,
+      yogini_dasha:         yoginiDashas,
+      current_yogini_dasha: currentYoginiDasha,
       summary: {
         lagna_sign:         lagnaSign.name,
         moon_sign:          moonPlanet.sign,
@@ -310,6 +407,11 @@ const astroTime = new Astronomy.AstroTime(dateUTC)
         current_dasha_ends: currentDasha.end,
         current_antardasha_lord: currentAntardasha?.lord ?? null,
         current_antardasha_ends: currentAntardasha?.end  ?? null,
+        current_yogini:              currentYoginiDasha.yogini,
+        current_yogini_planet:       currentYoginiDasha.planet,
+        current_yogini_ends:         currentYoginiDasha.end,
+        current_yogini_antardasha:   currentYoginiAntardasha?.yogini ?? null,
+        current_yogini_antardasha_ends: currentYoginiAntardasha?.end ?? null,
       }
     }
 

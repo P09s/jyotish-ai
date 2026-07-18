@@ -232,6 +232,24 @@ export default function KundaliPage() {
   // Responsive / Interactive states
   const [isMobile, setIsMobile] = useState(false)
   const [isChartExpanded, setIsChartExpanded] = useState(false)
+  const [dashaFal, setDashaFal] = useState<any>(null)
+  const [dashaFalLoading, setDashaFalLoading] = useState(false)
+  const [dashaFalError, setDashaFalError] = useState<string | null>(null)
+
+  async function loadDashaFal() {
+    setDashaFalLoading(true)
+    setDashaFalError(null)
+    try {
+      const res = await fetch('/api/dasha-fal')
+      const json = await res.json()
+      if (!res.ok) { setDashaFalError(json.error || 'Something went wrong'); return }
+      setDashaFal(json.dashaFal)
+    } catch {
+      setDashaFalError('Something went wrong')
+    } finally {
+      setDashaFalLoading(false)
+    }
+  }
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -699,6 +717,242 @@ export default function KundaliPage() {
                   {chart.summary.current_antardasha_ends?.slice(0, 7)}
                 </span>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* 5. Yogini Dasha table */}
+        {chart?.yogini_dasha && (
+          <div className="card" style={{ padding: isMobile ? '16px' : '24px', marginBottom: 20 }}>
+            <p style={{
+              fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em',
+              textTransform: 'uppercase', marginBottom: 16
+            }}>Yogini Dasha</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 12 : 6 }}>
+              {chart.yogini_dasha.map((d: any) => {
+                const isCur = d.isCurrent
+                const curAD = d.antardashas?.find((ad: any) => ad.isCurrent)
+
+                return (
+                  <div key={d.yogini + d.start} style={{ boxSizing: 'border-box' }}>
+
+                    {/* ── Mahadasha row ──────────────────────────────────── */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: isMobile ? 'flex-start' : 'center',
+                      gap: 12,
+                      padding: isMobile ? '16px' : '12px 14px',
+                      borderRadius: isCur ? '12px 12px 0 0' : 12,
+                      background: isCur ? 'var(--orange-glow)' : 'var(--bg-surface)',
+                      border: `1px solid ${isCur ? 'var(--orange-border)' : 'var(--border)'}`,
+                      borderBottom: isCur ? 'none' : undefined,
+                      boxSizing: 'border-box',
+                    }}>
+                      {/* Dot */}
+                      <div style={{
+                        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                        background: isCur ? 'var(--orange)' : 'var(--border2)',
+                        marginTop: isMobile ? 6 : 0
+                      }} />
+
+                      {/* Flex content wrapper */}
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: isMobile ? 'column' : 'row',
+                        alignItems: isMobile ? 'flex-start' : 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        gap: isMobile ? 6 : 16,
+                        minWidth: 0
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                          <span style={{
+                            fontSize: 15, fontWeight: isCur ? 600 : 500,
+                            color: isCur ? 'var(--text-primary)' : 'var(--text-muted)',
+                            wordBreak: 'break-word', lineHeight: 1.2
+                          }}>
+                            {d.yogini} <span style={{ opacity: 0.7, fontWeight: 400 }}>({d.planet})</span>
+                          </span>
+                          {isCur && (
+                            <span style={{ fontSize: 10, color: 'var(--orange)', background: 'rgba(249,115,22,0.15)', padding: '2px 6px', borderRadius: 4, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                              Current
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                          {d.start?.slice(0, 7)} — {d.end?.slice(0, 7)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* ── Antardasha rows — only for current mahadasha ───── */}
+                    {isCur && d.antardashas?.length > 0 && (
+                      <div style={{
+                        padding: isMobile ? '12px' : '10px 10px 12px',
+                        background: 'var(--bg-surface2)',
+                        border: '1px solid var(--orange-border)',
+                        borderTop: 'none', borderRadius: '0 0 12px 12px',
+                        display: 'flex', flexDirection: 'column', gap: isMobile ? 8 : 4,
+                        boxSizing: 'border-box',
+                      }}>
+                        {!isMobile && (
+                          <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '0 12px 10px 24px', borderBottom: '1px solid var(--border)', marginBottom: 4
+                          }}>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                              Sub-period
+                            </span>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>
+                              Duration
+                            </span>
+                          </div>
+                        )}
+
+                        {d.antardashas.map((ad: any) => {
+                          const isAdCur  = ad.isCurrent
+                          const isPast   = new Date(ad.end) < new Date()
+                          return (
+                            <div key={ad.yogini + ad.start} style={{
+                              display: 'flex',
+                              alignItems: isMobile ? 'flex-start' : 'center',
+                              gap: 12,
+                              padding: isMobile ? '10px 12px' : '8px 12px',
+                              borderRadius: 8,
+                              background: isAdCur ? 'var(--orange-glow)' : 'transparent',
+                              border: isAdCur ? '1px solid var(--orange-border)' : '1px solid transparent',
+                              boxSizing: 'border-box',
+                            }}>
+                              {/* Dot */}
+                              <div style={{
+                                width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+                                background: isAdCur ? 'var(--orange)' : (isPast ? 'var(--text-muted)' : 'var(--border2)'),
+                                marginTop: isMobile ? 6 : 0
+                              }} />
+
+                              {/* Flex content wrapper */}
+                              <div style={{
+                                display: 'flex',
+                                flexDirection: isMobile ? 'column' : 'row',
+                                alignItems: isMobile ? 'flex-start' : 'center',
+                                justifyContent: 'space-between',
+                                width: '100%',
+                                gap: isMobile ? 4 : 16,
+                                minWidth: 0
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                  <span style={{
+                                    fontSize: 14,
+                                    color: isAdCur ? 'var(--orange)' : (isPast ? 'var(--text-muted)' : 'var(--text-secondary)'),
+                                    fontWeight: isAdCur ? 600 : 400,
+                                    wordBreak: 'break-word', lineHeight: 1.2
+                                  }}>
+                                    {d.yogini}/{ad.yogini}
+                                  </span>
+                                  {isAdCur && (
+                                    <span style={{ fontSize: 9, color: 'var(--orange)', background: 'rgba(249,115,22,0.15)', padding: '2px 6px', borderRadius: 4, fontWeight: 700, letterSpacing: '0.05em', border: '1px solid var(--orange-border)' }}>
+                                      NOW
+                                    </span>
+                                  )}
+                                </div>
+                                <span style={{ fontSize: 13, color: isAdCur ? 'var(--orange-dim)' : 'var(--text-hint)', fontVariantNumeric: 'tabular-nums' }}>
+                                  {ad.start?.slice(0, 7)} — {ad.end?.slice(0, 7)}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Summary pill */}
+            {chart.summary?.current_yogini_antardasha && (
+              <div style={{
+                marginTop: 16, padding: '12px 16px', borderRadius: 10,
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6
+              }}>
+                Currently in{' '}
+                <span style={{ color: 'var(--orange)', fontWeight: 600 }}>
+                  {chart.summary.current_yogini}/{chart.summary.current_yogini_antardasha} Antardasha
+                </span>
+                {' '}ending{' '}
+                <span style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                  {chart.summary.current_yogini_antardasha_ends?.slice(0, 7)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 6. Dasha Fal — AI reading of current dasha periods */}
+        {chart?.current_dasha && (
+          <div className="card" style={{ padding: isMobile ? '16px' : '24px', marginBottom: 20 }}>
+            <p style={{
+              fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em',
+              textTransform: 'uppercase', marginBottom: 16
+            }}>Dasha Fal</p>
+
+            {!dashaFal && !dashaFalLoading && (
+              <div>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 16 }}>
+                  Discover what your current {chart.current_dasha.lord}
+                  {chart.summary?.current_antardasha_lord ? `/${chart.summary.current_antardasha_lord}` : ''} Dasha
+                  {' '}means for you — grounded in your chart's houses and planetary dignities.
+                </p>
+                <button
+                  onClick={loadDashaFal}
+                  style={{
+                    padding: '12px 20px', borderRadius: 10, cursor: 'pointer',
+                    background: 'var(--orange-glow)', border: '1px solid var(--orange-border)',
+                    color: 'var(--orange)', fontSize: 13, fontWeight: 600,
+                  }}
+                >
+                  Reveal my Dasha Fal
+                </button>
+              </div>
+            )}
+
+            {dashaFalLoading && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                <div style={{
+                  width: 16, height: 16, borderRadius: '50%',
+                  border: '2px solid var(--orange-border)', borderTopColor: 'var(--orange)',
+                  animation: 'dashaFalSpin 0.8s linear infinite'
+                }} />
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Reading your Dasha Fal…</span>
+                <style>{`@keyframes dashaFalSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+              </div>
+            )}
+
+            {dashaFalError && (
+              <p style={{ fontSize: 13, color: '#FCA5A5' }}>{dashaFalError}</p>
+            )}
+
+            {dashaFal && (
+              <>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                  <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 100, background: 'var(--orange-glow)', border: '1px solid var(--orange-border)', color: 'var(--orange)' }}>
+                    {dashaFal.mahadasha?.lord} in House {dashaFal.mahadasha?.currentHouse}
+                    {dashaFal.mahadasha?.dignity ? ` · ${dashaFal.mahadasha.dignity}` : ''}
+                  </span>
+                  {dashaFal.antardasha && (
+                    <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 100, background: 'var(--bg-surface2)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                      {dashaFal.antardasha.lord} in House {dashaFal.antardasha.currentHouse}
+                      {dashaFal.antardasha.dignity ? ` · ${dashaFal.antardasha.dignity}` : ''}
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-line' }}>
+                  {dashaFal.narrative}
+                </p>
+              </>
             )}
           </div>
         )}
