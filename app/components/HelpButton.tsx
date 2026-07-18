@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { HelpCircle, X, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat' | 'login' | 'signup'
+type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat' | 'login' | 'signup' | 'numerology'
 
 const HELP_DATA: Record<PageName, { title: string; content: React.ReactNode }> = {
   dashboard: {
@@ -86,6 +86,15 @@ const HELP_DATA: Record<PageName, { title: string; content: React.ReactNode }> =
       <>
         <p style={{ marginBottom: 12 }}>We need your exact birth details (date, time, and place) to calculate precise planetary positions for your Vedic chart.</p>
         <p>Your data is kept private and is only used to generate your astrological readings.</p>
+      </>
+    )
+  },
+  numerology: {
+    title: 'Understanding Your Numbers',
+    content: (
+      <>
+        <p style={{ marginBottom: 12 }}><strong>Mulank (Root Number):</strong> Calculated from just the day you were born, reduced to a single digit. It reflects your core personality and instinctive nature.</p>
+        <p><strong>Bhagyank (Destiny Number):</strong> Calculated from your complete date of birth. It reflects your life path and the larger themes you're here to work through.</p>
       </>
     )
   },

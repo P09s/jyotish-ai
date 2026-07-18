@@ -35,6 +35,7 @@ export default async function DashboardPage() {
     { href: '/panchang', tag: 'Today', title: 'Daily Panchang', desc: 'Tithi, nakshatra & auspicious timings', iconName: 'sun' as const },
     { href: '/transits', tag: 'Live', title: 'Transits', desc: "Today's planets over your natal chart", iconName: 'globe' as const },
     { href: '/milan', tag: 'Love', title: 'Kundali Matching', desc: 'Check compatibility with your partner', iconName: 'heart' as const },
+    { href: '/numerology', tag: 'Ank', title: 'Numerology', desc: 'Your Mulank & Bhagyank from your birth date', iconName: 'hash' as const },
     { href: '/profile', tag: 'Profile', title: 'Edit Profile', desc: 'Update birth details or personal info', iconName: 'user' as const },
   ]
 
