@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Star, MessageCircle, User, ChevronRight, Sun, Globe, Heart, Hash } from 'lucide-react'
+import { Star, MessageCircle, User, ChevronRight, Sun, Globe, Heart, Hash, Sparkles, Moon } from 'lucide-react'
 
 const icons = {
   star: { default: <Star size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <Star size={20} color="var(--orange)" strokeWidth={1.5} /> },
@@ -12,6 +12,8 @@ const icons = {
   globe: { default: <Globe size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <Globe size={20} color="var(--orange)" strokeWidth={1.5} /> },
   heart: { default: <Heart size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <Heart size={20} color="var(--orange)" strokeWidth={1.5} /> },
   hash: { default: <Hash size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <Hash size={20} color="var(--orange)" strokeWidth={1.5} /> },
+  sparkles: { default: <Sparkles size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <Sparkles size={20} color="var(--orange)" strokeWidth={1.5} /> },
+  moon: { default: <Moon size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <Moon size={20} color="var(--orange)" strokeWidth={1.5} /> },
 }
 
 type Props = {
@@ -19,7 +21,7 @@ type Props = {
   title: string
   desc: string
   tag: string
-  iconName: 'star' | 'message' | 'user' | 'sun' | 'globe' | 'heart' | 'hash'
+  iconName: 'star' | 'message' | 'user' | 'sun' | 'globe' | 'heart' | 'hash' | 'sparkles' | 'moon'
   featured?: boolean
 }
 

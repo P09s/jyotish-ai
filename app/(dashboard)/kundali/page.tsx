@@ -1,6 +1,15 @@
 // app/(dashboard)/kundali/page.tsx
 'use client'
 import { useEffect, useState } from 'react'
+
+// Safety net: strip stray markdown in case a narrative slips despite prompts
+// asking for plain text — this page renders plain text only, not HTML.
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^[-*]\s+/gm, '')
+}
 import { createPortal } from 'react-dom'
 import { createClient } from '@/app/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -950,8 +959,45 @@ export default function KundaliPage() {
                   )}
                 </div>
                 <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-line' }}>
-                  {dashaFal.narrative}
+                  {stripMarkdown(dashaFal.narrative)}
                 </p>
+
+                {dashaFal.remedies && (
+                  <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+                      Remedies (Upay) for {dashaFal.mahadasha.lord}
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 14 }}>
+                      <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                        <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Gemstone</p>
+                        <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, margin: 0 }}>
+                          {dashaFal.remedies.gemstone} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({dashaFal.remedies.gemstoneSanskrit})</span>
+                        </p>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                          Substitute: {dashaFal.remedies.substitute}
+                        </p>
+                      </div>
+                      <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                        <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Colour & Day</p>
+                        <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, margin: 0 }}>{dashaFal.remedies.color}</p>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{dashaFal.remedies.day}</p>
+                      </div>
+                      <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                        <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Mantra</p>
+                        <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: 0, fontStyle: 'italic' }}>{dashaFal.remedies.mantra}</p>
+                      </div>
+                      <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                        <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Charity (Daan)</p>
+                        <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: 0 }}>{dashaFal.remedies.charity}</p>
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 12px', borderRadius: 8, background: 'rgba(249,115,22,0.05)', border: '1px solid var(--orange-border)' }}>
+                      {dashaFal.remedies.caution}
+                    </p>
+                  </div>
+                )}
               </>
             )}
           </div>

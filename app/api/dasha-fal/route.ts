@@ -39,6 +39,26 @@ function getDignity(planetName: string, sign: string): string | null {
   return null
 }
 
+// ── Classical remedies (Navaratna gemstones, colours, mantra, charity) ────────
+// Gemstones — especially Blue Sapphire (Saturn), Hessonite (Rahu) and Cat's Eye
+// (Ketu) — are classically considered powerful and can backfire if wrong for the
+// person, so every entry includes a lower-cost substitute stone and a caution to
+// trial it and consult a qualified astrologer before committing to the primary gem.
+const REMEDIES: Record<string, {
+  gemstone: string; gemstoneSanskrit: string; substitute: string
+  color: string; day: string; mantra: string; charity: string; caution: string
+}> = {
+  Sun:     { gemstone: 'Ruby',            gemstoneSanskrit: 'Manikya',         substitute: 'Red Garnet or Red Spinel', color: 'Red, Orange, Copper',     day: 'Sunday',    mantra: 'Om Suryaya Namaha',      charity: 'Wheat, jaggery, or copper items to those in need', caution: 'Trial the substitute stone for a few weeks before wearing Ruby, and confirm fit with an astrologer first.' },
+  Moon:    { gemstone: 'Pearl',           gemstoneSanskrit: 'Moti',            substitute: 'Moonstone',                color: 'White, Cream, Silver',     day: 'Monday',    mantra: 'Om Chandraya Namaha',    charity: 'Rice, milk, or white clothes to those in need',    caution: 'Trial the substitute stone for a few weeks before wearing Pearl, and confirm fit with an astrologer first.' },
+  Mars:    { gemstone: 'Red Coral',       gemstoneSanskrit: 'Moonga',          substitute: 'Carnelian',                color: 'Red',                      day: 'Tuesday',   mantra: 'Om Angarakaya Namaha',   charity: 'Red lentils (masoor dal) or jaggery to those in need', caution: 'Trial the substitute stone for a few weeks before wearing Red Coral, and confirm fit with an astrologer first.' },
+  Mercury: { gemstone: 'Emerald',         gemstoneSanskrit: 'Panna',           substitute: 'Peridot or Green Onyx',    color: 'Green',                    day: 'Wednesday', mantra: 'Om Budhaya Namaha',      charity: 'Green moong dal or green clothes to those in need', caution: 'Trial the substitute stone for a few weeks before wearing Emerald, and confirm fit with an astrologer first.' },
+  Jupiter: { gemstone: 'Yellow Sapphire', gemstoneSanskrit: 'Pukhraj',         substitute: 'Yellow Topaz or Citrine',  color: 'Yellow, Gold',             day: 'Thursday',  mantra: 'Om Brihaspataye Namaha', charity: 'Turmeric, chana dal, or yellow items to those in need', caution: 'Trial the substitute stone for a few weeks before wearing Yellow Sapphire, and confirm fit with an astrologer first.' },
+  Venus:   { gemstone: 'Diamond',         gemstoneSanskrit: 'Heera',           substitute: 'White Sapphire or Zircon', color: 'White, Pastel Pink',      day: 'Friday',    mantra: 'Om Shukraya Namaha',     charity: 'Rice, sugar, or white/pastel clothes to those in need', caution: 'A high-value stone — most people trial the substitute first and consult a qualified astrologer before committing to a Diamond.' },
+  Saturn:  { gemstone: 'Blue Sapphire',   gemstoneSanskrit: 'Neelam',          substitute: 'Amethyst',                 color: 'Dark Blue, Black',        day: 'Saturday',  mantra: 'Om Shanicharaya Namaha', charity: 'Black sesame, mustard oil, or iron items to those in need', caution: 'Classical texts consider Blue Sapphire the most powerful and unpredictable gem — always trial the substitute for a few weeks first, and only wear it under a qualified astrologer\'s guidance.' },
+  Rahu:    { gemstone: 'Hessonite',       gemstoneSanskrit: 'Gomed',           substitute: 'Orange Zircon',            color: 'Smoky, Multicolor',       day: 'Saturday',  mantra: 'Om Rahave Namaha',       charity: 'Mustard seeds or blankets to those in need', caution: 'A shadow-planet gemstone — best worn only after a trial period and consultation with a qualified astrologer.' },
+  Ketu:    { gemstone: "Cat's Eye",       gemstoneSanskrit: 'Vaidurya / Lehsunia', substitute: 'Tiger Eye',            color: 'Grey, Brown, Multicolor', day: 'Tuesday',   mantra: 'Om Ketave Namaha',       charity: 'Sesame seeds or blankets to those in need', caution: 'A shadow-planet gemstone — best worn only after a trial period and consultation with a qualified astrologer.' },
+}
+
 function buildPlanetContext(planetName: string, chart: any, lagnaSignIdx: number) {
   const p = chart.planets?.find((pl: any) => pl.name === planetName)
   if (!p) return null
@@ -87,6 +107,7 @@ export async function GET() {
 
     const mdContext = buildPlanetContext(mdLord, chart, lagnaSignIdx)
     const adContext = adLord ? buildPlanetContext(adLord, chart, lagnaSignIdx) : null
+    const remedies   = REMEDIES[mdLord] ?? null
 
     // ── Groq AI narrative — grounded in real house/dignity data, not generic ──
     const systemPrompt = `You are Daivam — a warm, wise Vedic astrologer specialising in Dasha Phala (results of planetary periods).
@@ -131,6 +152,7 @@ Provide a personalised Dasha Fal reading for this period.`
         mahadasha:  { lord: mdLord, ...mdContext },
         antardasha: adLord ? { lord: adLord, ...adContext } : null,
         yogini:     { name: yogini ?? null, planet: yoginiPlanet ?? null },
+        remedies,
         narrative,
       },
     })

@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { HelpCircle, X, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat' | 'login' | 'signup' | 'numerology'
+type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat' | 'login' | 'signup' | 'numerology' | 'bhavishya-fal' | 'shubh-ashubh'
 
 const HELP_DATA: Record<PageName, { title: string; content: React.ReactNode }> = {
   dashboard: {
@@ -95,6 +95,24 @@ const HELP_DATA: Record<PageName, { title: string; content: React.ReactNode }> =
       <>
         <p style={{ marginBottom: 12 }}><strong>Mulank (Root Number):</strong> Calculated from just the day you were born, reduced to a single digit. It reflects your core personality and instinctive nature.</p>
         <p><strong>Bhagyank (Destiny Number):</strong> Calculated from your complete date of birth. It reflects your life path and the larger themes you're here to work through.</p>
+      </>
+    )
+  },
+  'bhavishya-fal': {
+    title: 'About Your Bhavishya Fal',
+    content: (
+      <>
+        <p style={{ marginBottom: 12 }}>This reading looks at four key houses in your chart — Career (10th), Marriage (7th), Wealth (2nd), and Health (6th) — and how their ruling planets are placed.</p>
+        <p>A challenging placement isn't a fixed doom — think of it as an area asking for extra attention and mindful effort.</p>
+      </>
+    )
+  },
+  'shubh-ashubh': {
+    title: 'Understanding Tara & Chandra Bala',
+    content: (
+      <>
+        <p style={{ marginBottom: 12 }}><strong>Tara Bala:</strong> Compares today's Moon nakshatra to your birth nakshatra — a classical way to judge whether today favors starting something new.</p>
+        <p><strong>Chandra Bala:</strong> Tracks how far today's Moon has moved from your natal Moon sign. Houses 1, 3, 6, 7, 10 and 11 are considered strong; 4, 8, 9 and 12 call for more caution.</p>
       </>
     )
   },

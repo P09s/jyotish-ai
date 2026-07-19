@@ -36,6 +36,8 @@ export default async function DashboardPage() {
     { href: '/transits', tag: 'Live', title: 'Transits', desc: "Today's planets over your natal chart", iconName: 'globe' as const },
     { href: '/milan', tag: 'Love', title: 'Kundali Matching', desc: 'Check compatibility with your partner', iconName: 'heart' as const },
     { href: '/numerology', tag: 'Ank', title: 'Numerology', desc: 'Your Mulank & Bhagyank from your birth date', iconName: 'hash' as const },
+    { href: '/bhavishya-fal', tag: 'Future', title: 'Bhavishya Fal', desc: 'Career, marriage, wealth & health predictions', iconName: 'sparkles' as const },
+    { href: '/shubh-ashubh', tag: 'Today', title: 'Shubh Ashubh', desc: "Today's favorability — Tara & Chandra Bala", iconName: 'moon' as const },
     { href: '/profile', tag: 'Profile', title: 'Edit Profile', desc: 'Update birth details or personal info', iconName: 'user' as const },
   ]
 
