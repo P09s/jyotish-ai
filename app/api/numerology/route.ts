@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { getCached, setCached } from '@/app/lib/cache/route-cache'
 
 // ── Navagraha number-planet mapping (Ank Jyotish) ──────────────────────────────
 // Standard Vedic numerology: each digit 1-9 is ruled by one of the nine Grahas.
@@ -60,6 +61,12 @@ export async function GET() {
     const mulankInfo   = PLANET_INFO[mulank]
     const bhagyankInfo = PLANET_INFO[bhagyank]
 
+    // Numerology never changes unless the DOB itself changes, so the cache key
+    // is just the DOB string — a fresh Groq call only fires if it's different.
+    const cacheKey = profile.date_of_birth
+    const cached = await getCached(supabase, user.id, 'numerology', cacheKey)
+    if (cached) return NextResponse.json({ success: true, numerology: cached })
+
     // ── Groq AI narrative ────────────────────────────────────────
     const systemPrompt = `You are Daivam — a warm, wise Vedic numerologist (Ank Jyotish specialist).
 Keep your response to exactly 2 short paragraphs, under 130 words total:
@@ -84,14 +91,14 @@ Provide a personalised numerology reading.`
 
     const narrative = completion.choices[0]?.message?.content ?? ''
 
-    return NextResponse.json({
-      success: true,
-      numerology: {
-        mulank:   { number: mulank,   ...mulankInfo },
-        bhagyank: { number: bhagyank, ...bhagyankInfo },
-        narrative,
-      },
-    })
+    const numerology = {
+      mulank:   { number: mulank,   ...mulankInfo },
+      bhagyank: { number: bhagyank, ...bhagyankInfo },
+      narrative,
+    }
+    await setCached(supabase, user.id, 'numerology', cacheKey, numerology)
+
+    return NextResponse.json({ success: true, numerology })
   } catch (err: unknown) {
     console.error('Numerology error:', err)
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Numerology calculation failed' }, { status: 500 })

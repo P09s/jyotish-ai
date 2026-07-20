@@ -113,6 +113,16 @@ export async function POST(request: Request) {
 }
 
 // ── System prompt — uses exact field names from your kundali_charts table ────
+// Same formula as app/api/numerology/route.ts — computed here too so the chat
+// AI states the real Mulank/Bhagyank instead of trying to derive it itself
+// (LLMs are unreliable at multi-step arithmetic and will hallucinate the math).
+function digitalRoot(n: number): number {
+  while (n > 9) {
+    n = String(n).split('').reduce((sum, d) => sum + parseInt(d, 10), 0)
+  }
+  return n
+}
+
 function buildSystemPrompt(profile: any, chart: any): string {
   const lines: string[] = []
 
@@ -161,6 +171,16 @@ function buildSystemPrompt(profile: any, chart: any): string {
 
     if (profile.date_of_birth) {
       lines.push(`Date of birth: ${profile.date_of_birth}`)
+
+      const [y, m, d] = profile.date_of_birth.split('-').map((s: string) => parseInt(s, 10))
+      if (y && m && d) {
+        const mulank   = digitalRoot(d)
+        const bhagyank = digitalRoot(`${d}${m}${y}`.split('').reduce((s, c) => s + parseInt(c, 10), 0))
+        lines.push(
+          `Mulank (Root Number, from day of birth only): ${mulank}. Bhagyank (Destiny Number, from full DOB): ${bhagyank}. ` +
+          `State these exact numbers if asked — do not recalculate or re-derive them yourself, and do not show working for them.`
+        )
+      }
     }
 
     if (profile.time_of_birth) {
@@ -228,6 +248,22 @@ function buildSystemPrompt(profile: any, chart: any): string {
       `Moon Nakshatra detail: ${n.name}, Pada ${n.pada}, Nakshatra lord: ${n.lord}`
     )
   }
+
+  // Yogini Dasha (secondary dasha system, alongside Vimshottari above)
+  if (chart.current_yogini_dasha) {
+    lines.push(
+      `Current Yogini Dasha: ${chart.current_yogini_dasha.yogini} (ruled by ${chart.current_yogini_dasha.planet}), until ${chart.current_yogini_dasha.end}`
+    )
+  }
+
+  lines.push(``)
+  lines.push(
+    `── OTHER FEATURES IN THIS APP ──`
+  )
+  lines.push(
+    `If relevant to the seeker's question, you can point them to: Numerology (Mulank & Bhagyank), Bhavishya Fal (career/marriage/wealth/health predictions), Dasha Fal (current dasha reading with gemstone/mantra/charity remedies), and Shubh Ashubh (today's personal favorability). Only mention these if the seeker's question would genuinely benefit from that page — don't list them unprompted.`
+  )
+  lines.push(``)
 
   // Planets
   if (chart.planets?.length) {

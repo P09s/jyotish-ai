@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { getCached, setCached } from '@/app/lib/cache/route-cache'
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 
@@ -78,6 +79,12 @@ export async function GET() {
 
     const lagnaSignIdx = chart.lagna?.sign_index ?? 0
 
+    // Bhavishya Fal only changes if the chart itself is regenerated, so the
+    // cache key is the chart row's created_at timestamp.
+    const cacheKey = chartRow?.created_at ?? 'unknown'
+    const cached = await getCached(supabase, user.id, 'bhavishya-fal', cacheKey)
+    if (cached) return NextResponse.json({ success: true, bhavishyaFal: cached })
+
     const areas = {
       career:   houseContext(10, chart, lagnaSignIdx),
       marriage: houseContext(7,  chart, lagnaSignIdx),
@@ -118,10 +125,10 @@ Provide a personalised Bhavishya Fal reading covering these four life areas.`
 
     const narrative = completion.choices[0]?.message?.content ?? ''
 
-    return NextResponse.json({
-      success: true,
-      bhavishyaFal: { areas, narrative },
-    })
+    const bhavishyaFal = { areas, narrative }
+    await setCached(supabase, user.id, 'bhavishya-fal', cacheKey, bhavishyaFal)
+
+    return NextResponse.json({ success: true, bhavishyaFal })
   } catch (err: unknown) {
     console.error('Bhavishya Fal error:', err)
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Bhavishya Fal calculation failed' }, { status: 500 })

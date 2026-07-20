@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { getCached, setCached } from '@/app/lib/cache/route-cache'
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 
@@ -105,6 +106,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Dasha data unavailable on this chart. Please regenerate your Kundali.' }, { status: 400 })
     }
 
+    // Dasha Fal only changes when the Mahadasha/Antardasha shifts, or the chart
+    // itself is regenerated — cache key combines both.
+    const cacheKey = `${mdLord}|${adLord}|${chartRow?.created_at ?? 'unknown'}`
+    const cached = await getCached(supabase, user.id, 'dasha-fal', cacheKey)
+    if (cached) return NextResponse.json({ success: true, dashaFal: cached })
+
     const mdContext = buildPlanetContext(mdLord, chart, lagnaSignIdx)
     const adContext = adLord ? buildPlanetContext(adLord, chart, lagnaSignIdx) : null
     const remedies   = REMEDIES[mdLord] ?? null
@@ -146,16 +153,16 @@ Provide a personalised Dasha Fal reading for this period.`
 
     const narrative = completion.choices[0]?.message?.content ?? ''
 
-    return NextResponse.json({
-      success: true,
-      dashaFal: {
-        mahadasha:  { lord: mdLord, ...mdContext },
-        antardasha: adLord ? { lord: adLord, ...adContext } : null,
-        yogini:     { name: yogini ?? null, planet: yoginiPlanet ?? null },
-        remedies,
-        narrative,
-      },
-    })
+    const dashaFal = {
+      mahadasha:  { lord: mdLord, ...mdContext },
+      antardasha: adLord ? { lord: adLord, ...adContext } : null,
+      yogini:     { name: yogini ?? null, planet: yoginiPlanet ?? null },
+      remedies,
+      narrative,
+    }
+    await setCached(supabase, user.id, 'dasha-fal', cacheKey, dashaFal)
+
+    return NextResponse.json({ success: true, dashaFal })
   } catch (err: unknown) {
     console.error('Dasha Fal error:', err)
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Dasha Fal calculation failed' }, { status: 500 })

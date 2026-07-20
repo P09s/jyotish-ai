@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
 import * as Astronomy from 'astronomy-engine'
+import { getCached, setCached } from '@/app/lib/cache/route-cache'
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 const NAKSHATRAS = [
@@ -101,6 +102,11 @@ export async function GET() {
     const month = nowLocal.getMonth() + 1
     const day   = nowLocal.getDate()
 
+    // Shubh Ashubh changes daily as the Moon transits — cache key is just today's date.
+    const cacheKey = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+    const cached = await getCached(supabase, user.id, 'shubh-ashubh', cacheKey)
+    if (cached) return NextResponse.json({ success: true, shubhAshubh: cached })
+
     const noonUTC   = new Date(Date.UTC(year, month - 1, day, 6, 0, 0))
     const astroTime = new Astronomy.AstroTime(noonUTC)
     const jd        = toJD(year, month, day, 6)
@@ -161,19 +167,19 @@ Provide today's Shubh-Ashubh reading.`
 
     const narrative = completion.choices[0]?.message?.content ?? ''
 
-    return NextResponse.json({
-      success: true,
-      shubhAshubh: {
-        date: nowLocal.toISOString().split('T')[0],
-        tara: { name: taraName, quality: taraQuality, group: taraGroupNum },
-        chandra: { houseDistance, quality: chandraQual },
-        yogas: {
-          gajaKesari,
-          kaalSarp,
-        },
-        narrative,
+    const shubhAshubh = {
+      date: cacheKey,
+      tara: { name: taraName, quality: taraQuality, group: taraGroupNum },
+      chandra: { houseDistance, quality: chandraQual },
+      yogas: {
+        gajaKesari,
+        kaalSarp,
       },
-    })
+      narrative,
+    }
+    await setCached(supabase, user.id, 'shubh-ashubh', cacheKey, shubhAshubh)
+
+    return NextResponse.json({ success: true, shubhAshubh })
   } catch (err: unknown) {
     console.error('Shubh Ashubh error:', err)
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Shubh Ashubh calculation failed' }, { status: 500 })

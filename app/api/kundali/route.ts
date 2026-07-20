@@ -417,7 +417,7 @@ const astroTime = new Astronomy.AstroTime(dateUTC)
 
     const { error: saveError } = await supabase
       .from('kundali_charts')
-      .upsert({ user_id: user.id, chart_data: chartData })
+      .upsert({ user_id: user.id, chart_data: chartData }, { onConflict: 'user_id' })
       .select().single()
     if (saveError) throw saveError
 
