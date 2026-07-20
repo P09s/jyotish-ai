@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { CLASSICAL_PLANETS, getOwnedHouses, getFunctionalNature, REMEDIES } from '@/app/lib/jyotish/remedies'
+import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+
+const CHAT_RATE_LIMIT = 20        // requests
+const CHAT_RATE_WINDOW_MS = 5 * 60 * 1000  // per 5 minutes
+const MAX_MESSAGES = 40
+const MAX_MESSAGE_CHARS = 4000
+const MAX_TOTAL_CHARS = 30000
 
 export async function POST(request: Request) {
   try {
@@ -11,11 +19,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { allowed, retryAfterMs } = checkRateLimit(`chat:${user.id}`, CHAT_RATE_LIMIT, CHAT_RATE_WINDOW_MS)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests — please wait a moment before sending another message.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+      )
+    }
+
     const { messages } = await request.json()
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
         { error: 'messages array required' },
+        { status: 400 }
+      )
+    }
+
+    if (messages.length > MAX_MESSAGES) {
+      return NextResponse.json(
+        { error: `Too many messages in one request (max ${MAX_MESSAGES}).` },
+        { status: 400 }
+      )
+    }
+
+    const totalChars = messages.reduce((sum: number, m: any) => sum + (typeof m?.content === 'string' ? m.content.length : 0), 0)
+    if (totalChars > MAX_TOTAL_CHARS || messages.some((m: any) => typeof m?.content === 'string' && m.content.length > MAX_MESSAGE_CHARS)) {
+      return NextResponse.json(
+        { error: 'Message too long.' },
         { status: 400 }
       )
     }
@@ -113,24 +144,6 @@ export async function POST(request: Request) {
 }
 
 // ── System prompt — uses exact field names from your kundali_charts table ────
-// Same classical remedy table as app/api/dasha-fal/route.ts — duplicated here
-// so the chat AI states the real gemstone/colour/mantra/charity instead of
-// inventing one (as seen: it once hallucinated "Shankhpushpi", an Ayurvedic
-// herb, as a gemstone for Venus).
-const REMEDIES: Record<string, {
-  gemstone: string; gemstoneSanskrit: string; substitute: string
-  color: string; day: string; mantra: string; charity: string
-}> = {
-  Sun:     { gemstone: 'Ruby',            gemstoneSanskrit: 'Manikya',            substitute: 'Red Garnet or Red Spinel', color: 'Red, Orange, Copper',     day: 'Sunday',    mantra: 'Om Suryaya Namaha',      charity: 'Wheat, jaggery, or copper items' },
-  Moon:    { gemstone: 'Pearl',           gemstoneSanskrit: 'Moti',               substitute: 'Moonstone',                color: 'White, Cream, Silver',     day: 'Monday',    mantra: 'Om Chandraya Namaha',    charity: 'Rice, milk, or white clothes' },
-  Mars:    { gemstone: 'Red Coral',       gemstoneSanskrit: 'Moonga',             substitute: 'Carnelian',                color: 'Red',                      day: 'Tuesday',   mantra: 'Om Angarakaya Namaha',   charity: 'Red lentils (masoor dal) or jaggery' },
-  Mercury: { gemstone: 'Emerald',         gemstoneSanskrit: 'Panna',              substitute: 'Peridot or Green Onyx',    color: 'Green',                    day: 'Wednesday', mantra: 'Om Budhaya Namaha',      charity: 'Green moong dal or green clothes' },
-  Jupiter: { gemstone: 'Yellow Sapphire', gemstoneSanskrit: 'Pukhraj',            substitute: 'Yellow Topaz or Citrine',  color: 'Yellow, Gold',             day: 'Thursday',  mantra: 'Om Brihaspataye Namaha', charity: 'Turmeric, chana dal, or yellow items' },
-  Venus:   { gemstone: 'Diamond',         gemstoneSanskrit: 'Heera',              substitute: 'White Sapphire or Zircon', color: 'White, Pastel Pink',      day: 'Friday',    mantra: 'Om Shukraya Namaha',     charity: 'Rice, sugar, or white/pastel clothes' },
-  Saturn:  { gemstone: 'Blue Sapphire',   gemstoneSanskrit: 'Neelam',             substitute: 'Amethyst',                 color: 'Dark Blue, Black',        day: 'Saturday',  mantra: 'Om Shanicharaya Namaha', charity: 'Black sesame, mustard oil, or iron items' },
-  Rahu:    { gemstone: 'Hessonite',       gemstoneSanskrit: 'Gomed',              substitute: 'Orange Zircon',            color: 'Smoky, Multicolor',       day: 'Saturday',  mantra: 'Om Rahave Namaha',       charity: 'Mustard seeds or blankets' },
-  Ketu:    { gemstone: "Cat's Eye",       gemstoneSanskrit: 'Vaidurya / Lehsunia', substitute: 'Tiger Eye',               color: 'Grey, Brown, Multicolor', day: 'Tuesday',   mantra: 'Om Ketave Namaha',       charity: 'Sesame seeds or blankets' },
-}
 
 // Same formula as app/api/numerology/route.ts — computed here too so the chat
 // AI states the real Mulank/Bhagyank instead of trying to derive it itself
@@ -140,42 +153,6 @@ function digitalRoot(n: number): number {
     n = String(n).split('').reduce((sum, d) => sum + parseInt(d, 10), 0)
   }
   return n
-}
-
-const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
-const SIGN_LORD: Record<string, string> = {
-  Aries:'Mars', Taurus:'Venus', Gemini:'Mercury', Cancer:'Moon',
-  Leo:'Sun', Virgo:'Mercury', Libra:'Venus', Scorpio:'Mars',
-  Sagittarius:'Jupiter', Capricorn:'Saturn', Aquarius:'Saturn', Pisces:'Jupiter',
-}
-const KENDRA = [1,4,7,10]
-const TRIKONA = [1,5,9]
-const DUSTHANA = [6,8,12]
-const CLASSICAL_PLANETS = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn']
-
-function getHouseLord(houseNum: number, lagnaSignIdx: number): string {
-  const signIdx = (lagnaSignIdx + houseNum - 1) % 12
-  return SIGN_LORD[SIGNS[signIdx]]
-}
-function getOwnedHouses(planetName: string, lagnaSignIdx: number): number[] {
-  const owned: number[] = []
-  for (let h = 1; h <= 12; h++) if (getHouseLord(h, lagnaSignIdx) === planetName) owned.push(h)
-  return owned
-}
-// Yogakaraka concept (BPHS) — a planet's real gemstone suitability depends on
-// which houses it RULES for this specific Lagna, not on which dasha is running.
-function getFunctionalNature(planetName: string, lagnaSignIdx: number): 'yogakaraka' | 'benefic' | 'neutral' | 'malefic' {
-  const owned = getOwnedHouses(planetName, lagnaSignIdx)
-  if (owned.length === 0) return 'neutral'
-  const rulesLagna   = owned.includes(1)
-  const rulesKendra  = owned.some(h => KENDRA.includes(h))
-  const rulesTrikona = owned.some(h => TRIKONA.includes(h))
-  const onlyDusthana = owned.every(h => DUSTHANA.includes(h))
-  if (rulesLagna) return 'yogakaraka'
-  if (rulesKendra && rulesTrikona) return 'yogakaraka'
-  if (rulesTrikona) return 'benefic'
-  if (onlyDusthana) return 'malefic'
-  return 'neutral'
 }
 
 function buildSystemPrompt(profile: any, chart: any): string {
@@ -302,17 +279,24 @@ function buildSystemPrompt(profile: any, chart: any): string {
     const lagnaSignIdx = chart.lagna?.sign_index ?? 0
 
     const personalized = CLASSICAL_PLANETS
-      .map(p => ({ planet: p, nature: getFunctionalNature(p, lagnaSignIdx) }))
+      .map(p => ({ planet: p, nature: getFunctionalNature(p, lagnaSignIdx), houses: getOwnedHouses(p, lagnaSignIdx) }))
       .filter(r => r.nature === 'yogakaraka' || r.nature === 'benefic')
-      .map(r => REMEDIES[r.planet])
-      .filter(Boolean)
+      .map(r => ({ ...r, remedy: REMEDIES[r.planet] }))
+      .filter(r => r.remedy)
 
     if (personalized.length > 0) {
       lines.push(
-        `Personalized gemstone recommendation (based on which houses each planet RULES for this Lagna — the correct classical method, NOT simply the current dasha lord's planet): ` +
-        personalized.map(r => `${r.gemstone} (${r.gemstoneSanskrit}, substitute: ${r.substitute})`).join(' and ') + `. ` +
-        `Favourable colours: ${personalized.map(r => r.color).join('; ')}. ` +
-        `If asked "what is my gemstone" or similar, give THESE — never the generic gemstone of whichever planet's dasha happens to be running, unless that planet is also in this personalized list.`
+        `Personalized gemstone recommendation (based on which houses each planet RULES for this Lagna — the correct classical method, NOT simply the current dasha lord's planet). ` +
+        `ONLY the 7 classical grahas (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn) rule houses — Rahu and Ketu are shadow planets and NEVER rule a house or appear in this list, so never attribute house lordship or a gemstone to them. ` +
+        `Here is the exact, complete reasoning — use ONLY these facts if asked "why", do not invent alternate house-lord chains or connections beyond what's stated here:`
+      )
+      personalized.forEach(r => {
+        lines.push(
+          `— ${r.planet} rules house(s) ${r.houses.join(', ')} for this Lagna, making it a ${r.nature === 'yogakaraka' ? 'Yogakaraka (rules a Kendra AND a Trikona, or is the Lagna lord itself — the strongest possible benefic)' : 'functional benefic (rules a Trikona house — 5th or 9th)'}. Its gemstone is ${r.remedy.gemstone} (${r.remedy.gemstoneSanskrit}, substitute: ${r.remedy.substitute}, colour: ${r.remedy.color}).`
+        )
+      })
+      lines.push(
+        `If asked "what is my gemstone" give these stones; if asked "why", explain using only the house numbers and Yogakaraka/benefic reasoning stated above for that specific planet — never substitute a different planet's gemstone for the reasoning given.`
       )
     }
 

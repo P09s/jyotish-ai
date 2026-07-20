@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
 import * as Astronomy from 'astronomy-engine'
-import { getCached, setCached } from '@/app/lib/cache/route-cache'
+import { getCached, setCached, chartFingerprint } from '@/app/lib/cache/route-cache'
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 const NAKSHATRAS = [
@@ -103,7 +103,7 @@ export async function GET() {
     const day   = nowLocal.getDate()
 
     // Shubh Ashubh changes daily as the Moon transits — cache key is just today's date.
-    const cacheKey = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+    const cacheKey = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}|${chartFingerprint(chart)}`
     const cached = await getCached(supabase, user.id, 'shubh-ashubh', cacheKey)
     if (cached) return NextResponse.json({ success: true, shubhAshubh: cached })
 

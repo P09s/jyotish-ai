@@ -272,6 +272,13 @@ export async function POST(request: Request) {
     const [year, month, day] = date_of_birth.split('-').map(Number)
     const [hour = 12, minute = 0] = (time_of_birth || '12:00').split(':').map(Number)
 
+    if ([year, month, day, hour, minute].some(n => Number.isNaN(n))) {
+      return NextResponse.json({ error: 'Invalid date_of_birth or time_of_birth format' }, { status: 400 })
+    }
+    if (month < 1 || month > 12 || day < 1 || day > 31 || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return NextResponse.json({ error: 'date_of_birth or time_of_birth out of range' }, { status: 400 })
+    }
+
     const TZ_OFFSETS: Record<string,number> = {
       'Asia/Kolkata':5.5,'Asia/Calcutta':5.5,
       'Asia/Dubai':4,'Asia/Singapore':8,'Asia/Tokyo':9,'Asia/Bangkok':7,

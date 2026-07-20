@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
-import { getCached, setCached } from '@/app/lib/cache/route-cache'
+import { getCached, setCached, chartFingerprint } from '@/app/lib/cache/route-cache'
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 
@@ -81,7 +81,7 @@ export async function GET() {
 
     // Bhavishya Fal only changes if the chart itself is regenerated, so the
     // cache key is the chart row's created_at timestamp.
-    const cacheKey = chartRow?.created_at ?? 'unknown'
+    const cacheKey = chartFingerprint(chart)
     const cached = await getCached(supabase, user.id, 'bhavishya-fal', cacheKey)
     if (cached) return NextResponse.json({ success: true, bhavishyaFal: cached })
 
