@@ -962,22 +962,57 @@ export default function KundaliPage() {
                   {stripMarkdown(dashaFal.narrative)}
                 </p>
 
-                {dashaFal.remedies && (
+                {dashaFal.personalizedGemstones && dashaFal.personalizedGemstones.length > 0 && (
                   <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
-                      Remedies (Upay) for {dashaFal.mahadasha.lord}
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+                      Your Personal Gemstones
+                    </p>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 14 }}>
+                      Based on which houses these planets rule for your Lagna ({chart.lagna?.sign}) — not on the current dasha.
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                      {dashaFal.personalizedGemstones.map((g: any) => (
+                        <div key={g.planet} style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                          <p style={{ fontSize: 10, color: 'var(--orange-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+                            {g.planet} {g.nature === 'yogakaraka' ? '· Yogakaraka' : ''}
+                          </p>
+                          <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, margin: 0 }}>
+                            {g.remedy.gemstone} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({g.remedy.gemstoneSanskrit})</span>
+                          </p>
+                          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                            Substitute: {g.remedy.substitute}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 12px', borderRadius: 8, background: 'rgba(249,115,22,0.05)', border: '1px solid var(--orange-border)' }}>
+                      Trial the substitute stone for a few weeks first, and confirm fit with a qualified astrologer before wearing the primary gemstone.
+                    </p>
+                  </div>
+                )}
+
+                {dashaFal.remedies && (
+                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+                      Current Dasha Remedy — {dashaFal.mahadasha.lord}
+                    </p>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 14 }}>
+                      {dashaFal.mahadasha.isFunctionalMalefic
+                        ? `${dashaFal.mahadasha.lord} rules a difficult house for your Lagna — favour the mantra & charity below over its gemstone.`
+                        : `Timing-specific remedy for this dasha period, in addition to your personal gemstones above.`}
                     </p>
 
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 14 }}>
-                      <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                        <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Gemstone</p>
-                        <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, margin: 0 }}>
-                          {dashaFal.remedies.gemstone} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({dashaFal.remedies.gemstoneSanskrit})</span>
-                        </p>
-                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                          Substitute: {dashaFal.remedies.substitute}
-                        </p>
-                      </div>
+                      {!dashaFal.mahadasha.isFunctionalMalefic && (
+                        <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                          <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Gemstone</p>
+                          <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, margin: 0 }}>
+                            {dashaFal.remedies.gemstone} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({dashaFal.remedies.gemstoneSanskrit})</span>
+                          </p>
+                        </div>
+                      )}
                       <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                         <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Colour & Day</p>
                         <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, margin: 0 }}>{dashaFal.remedies.color}</p>
@@ -993,9 +1028,11 @@ export default function KundaliPage() {
                       </div>
                     </div>
 
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 12px', borderRadius: 8, background: 'rgba(249,115,22,0.05)', border: '1px solid var(--orange-border)' }}>
-                      {dashaFal.remedies.caution}
-                    </p>
+                    {!dashaFal.mahadasha.isFunctionalMalefic && (
+                      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 12px', borderRadius: 8, background: 'rgba(249,115,22,0.05)', border: '1px solid var(--orange-border)' }}>
+                        {dashaFal.remedies.caution}
+                      </p>
+                    )}
                   </div>
                 )}
               </>

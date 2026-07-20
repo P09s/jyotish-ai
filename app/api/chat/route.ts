@@ -113,6 +113,25 @@ export async function POST(request: Request) {
 }
 
 // ── System prompt — uses exact field names from your kundali_charts table ────
+// Same classical remedy table as app/api/dasha-fal/route.ts — duplicated here
+// so the chat AI states the real gemstone/colour/mantra/charity instead of
+// inventing one (as seen: it once hallucinated "Shankhpushpi", an Ayurvedic
+// herb, as a gemstone for Venus).
+const REMEDIES: Record<string, {
+  gemstone: string; gemstoneSanskrit: string; substitute: string
+  color: string; day: string; mantra: string; charity: string
+}> = {
+  Sun:     { gemstone: 'Ruby',            gemstoneSanskrit: 'Manikya',            substitute: 'Red Garnet or Red Spinel', color: 'Red, Orange, Copper',     day: 'Sunday',    mantra: 'Om Suryaya Namaha',      charity: 'Wheat, jaggery, or copper items' },
+  Moon:    { gemstone: 'Pearl',           gemstoneSanskrit: 'Moti',               substitute: 'Moonstone',                color: 'White, Cream, Silver',     day: 'Monday',    mantra: 'Om Chandraya Namaha',    charity: 'Rice, milk, or white clothes' },
+  Mars:    { gemstone: 'Red Coral',       gemstoneSanskrit: 'Moonga',             substitute: 'Carnelian',                color: 'Red',                      day: 'Tuesday',   mantra: 'Om Angarakaya Namaha',   charity: 'Red lentils (masoor dal) or jaggery' },
+  Mercury: { gemstone: 'Emerald',         gemstoneSanskrit: 'Panna',              substitute: 'Peridot or Green Onyx',    color: 'Green',                    day: 'Wednesday', mantra: 'Om Budhaya Namaha',      charity: 'Green moong dal or green clothes' },
+  Jupiter: { gemstone: 'Yellow Sapphire', gemstoneSanskrit: 'Pukhraj',            substitute: 'Yellow Topaz or Citrine',  color: 'Yellow, Gold',             day: 'Thursday',  mantra: 'Om Brihaspataye Namaha', charity: 'Turmeric, chana dal, or yellow items' },
+  Venus:   { gemstone: 'Diamond',         gemstoneSanskrit: 'Heera',              substitute: 'White Sapphire or Zircon', color: 'White, Pastel Pink',      day: 'Friday',    mantra: 'Om Shukraya Namaha',     charity: 'Rice, sugar, or white/pastel clothes' },
+  Saturn:  { gemstone: 'Blue Sapphire',   gemstoneSanskrit: 'Neelam',             substitute: 'Amethyst',                 color: 'Dark Blue, Black',        day: 'Saturday',  mantra: 'Om Shanicharaya Namaha', charity: 'Black sesame, mustard oil, or iron items' },
+  Rahu:    { gemstone: 'Hessonite',       gemstoneSanskrit: 'Gomed',              substitute: 'Orange Zircon',            color: 'Smoky, Multicolor',       day: 'Saturday',  mantra: 'Om Rahave Namaha',       charity: 'Mustard seeds or blankets' },
+  Ketu:    { gemstone: "Cat's Eye",       gemstoneSanskrit: 'Vaidurya / Lehsunia', substitute: 'Tiger Eye',               color: 'Grey, Brown, Multicolor', day: 'Tuesday',   mantra: 'Om Ketave Namaha',       charity: 'Sesame seeds or blankets' },
+}
+
 // Same formula as app/api/numerology/route.ts — computed here too so the chat
 // AI states the real Mulank/Bhagyank instead of trying to derive it itself
 // (LLMs are unreliable at multi-step arithmetic and will hallucinate the math).
@@ -121,6 +140,42 @@ function digitalRoot(n: number): number {
     n = String(n).split('').reduce((sum, d) => sum + parseInt(d, 10), 0)
   }
   return n
+}
+
+const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
+const SIGN_LORD: Record<string, string> = {
+  Aries:'Mars', Taurus:'Venus', Gemini:'Mercury', Cancer:'Moon',
+  Leo:'Sun', Virgo:'Mercury', Libra:'Venus', Scorpio:'Mars',
+  Sagittarius:'Jupiter', Capricorn:'Saturn', Aquarius:'Saturn', Pisces:'Jupiter',
+}
+const KENDRA = [1,4,7,10]
+const TRIKONA = [1,5,9]
+const DUSTHANA = [6,8,12]
+const CLASSICAL_PLANETS = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn']
+
+function getHouseLord(houseNum: number, lagnaSignIdx: number): string {
+  const signIdx = (lagnaSignIdx + houseNum - 1) % 12
+  return SIGN_LORD[SIGNS[signIdx]]
+}
+function getOwnedHouses(planetName: string, lagnaSignIdx: number): number[] {
+  const owned: number[] = []
+  for (let h = 1; h <= 12; h++) if (getHouseLord(h, lagnaSignIdx) === planetName) owned.push(h)
+  return owned
+}
+// Yogakaraka concept (BPHS) — a planet's real gemstone suitability depends on
+// which houses it RULES for this specific Lagna, not on which dasha is running.
+function getFunctionalNature(planetName: string, lagnaSignIdx: number): 'yogakaraka' | 'benefic' | 'neutral' | 'malefic' {
+  const owned = getOwnedHouses(planetName, lagnaSignIdx)
+  if (owned.length === 0) return 'neutral'
+  const rulesLagna   = owned.includes(1)
+  const rulesKendra  = owned.some(h => KENDRA.includes(h))
+  const rulesTrikona = owned.some(h => TRIKONA.includes(h))
+  const onlyDusthana = owned.every(h => DUSTHANA.includes(h))
+  if (rulesLagna) return 'yogakaraka'
+  if (rulesKendra && rulesTrikona) return 'yogakaraka'
+  if (rulesTrikona) return 'benefic'
+  if (onlyDusthana) return 'malefic'
+  return 'neutral'
 }
 
 function buildSystemPrompt(profile: any, chart: any): string {
@@ -157,6 +212,10 @@ function buildSystemPrompt(profile: any, chart: any): string {
 
   lines.push(
     `Never be fatalistic. Jyotish shows tendencies and timing — free will always plays a role.`
+  )
+
+  lines.push(
+    `Never invent specific facts (gemstones, remedies, numbers, dates, house placements) that aren't explicitly given to you in this context below. If asked something this context doesn't cover, say so honestly rather than guessing or calculating it yourself — you are unreliable at multi-step arithmetic and classical lookups, so always defer to the data provided here.`
   )
 
   lines.push(``)
@@ -238,6 +297,34 @@ function buildSystemPrompt(profile: any, chart: any): string {
     lines.push(
       `Current Mahadasha ends: ${chart.summary.current_dasha_ends}`
     )
+
+    const remedy = REMEDIES[chart.summary.current_dasha_lord]
+    const lagnaSignIdx = chart.lagna?.sign_index ?? 0
+
+    const personalized = CLASSICAL_PLANETS
+      .map(p => ({ planet: p, nature: getFunctionalNature(p, lagnaSignIdx) }))
+      .filter(r => r.nature === 'yogakaraka' || r.nature === 'benefic')
+      .map(r => REMEDIES[r.planet])
+      .filter(Boolean)
+
+    if (personalized.length > 0) {
+      lines.push(
+        `Personalized gemstone recommendation (based on which houses each planet RULES for this Lagna — the correct classical method, NOT simply the current dasha lord's planet): ` +
+        personalized.map(r => `${r.gemstone} (${r.gemstoneSanskrit}, substitute: ${r.substitute})`).join(' and ') + `. ` +
+        `Favourable colours: ${personalized.map(r => r.color).join('; ')}. ` +
+        `If asked "what is my gemstone" or similar, give THESE — never the generic gemstone of whichever planet's dasha happens to be running, unless that planet is also in this personalized list.`
+      )
+    }
+
+    const mdNature = getFunctionalNature(chart.summary.current_dasha_lord, lagnaSignIdx)
+    if (remedy) {
+      lines.push(
+        `Current Mahadasha lord ${chart.summary.current_dasha_lord}'s classical remedy (relevant mainly for THIS dasha period's timing, not as your primary gemstone unless it also appears in the personalized list above): ` +
+        `Gemstone — ${remedy.gemstone} (${remedy.gemstoneSanskrit}). Mantra — "${remedy.mantra}". Charity (Daan) — ${remedy.charity}. Favourable day — ${remedy.day}.` +
+        (mdNature === 'malefic' ? ` Note: this planet is a functional malefic for this Lagna — mention gemstone caution if asked, and favour mantra/charity remedies over wearing its gemstone.` : '') +
+        ` Never invent a substance, herb, or gemstone not listed here or in the personalized recommendation above.`
+      )
+    }
   }
 
   // Moon Nakshatra detail

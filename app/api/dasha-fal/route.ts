@@ -40,6 +40,46 @@ function getDignity(planetName: string, sign: string): string | null {
   return null
 }
 
+// ── Functional nature per Lagna (Yogakaraka concept, BPHS) ─────────────────────
+// A planet's classical gemstone recommendation should be based on which houses
+// it RULES for this specific Lagna, not simply on which Mahadasha is running.
+// Kendra houses (1,4,7,10) = Vishnu-sthana (action); Trikona (1,5,9) = Lakshmi-
+// sthana (fortune). A planet ruling both is a Yogakaraka — the strongest
+// possible benefic for that Lagna, regardless of its natural (naisargika)
+// nature. The Lagna lord itself is always at least a benefic ("never harms").
+const KENDRA   = [1,4,7,10]
+const TRIKONA  = [1,5,9]
+const DUSTHANA = [6,8,12]
+const CLASSICAL_PLANETS = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn']
+
+function getFunctionalNature(planetName: string, lagnaSignIdx: number): 'yogakaraka' | 'benefic' | 'neutral' | 'malefic' {
+  const owned = getOwnedHouses(planetName, lagnaSignIdx)
+  if (owned.length === 0) return 'neutral'
+
+  const rulesLagna   = owned.includes(1)
+  const rulesKendra  = owned.some(h => KENDRA.includes(h))
+  const rulesTrikona = owned.some(h => TRIKONA.includes(h))
+  const onlyDusthana = owned.every(h => DUSTHANA.includes(h))
+
+  if (rulesLagna) return 'yogakaraka'                  // Lagna lord — always protects
+  if (rulesKendra && rulesTrikona) return 'yogakaraka' // true Yogakaraka
+  if (rulesTrikona) return 'benefic'                    // pure Trikona lord (5th/9th)
+  if (onlyDusthana) return 'malefic'                    // only 6th/8th/12th, no relief
+  return 'neutral'                                      // Kendra-only, or 2nd/3rd/11th only
+}
+
+function getPersonalizedGemstones(lagnaSignIdx: number) {
+  const results = CLASSICAL_PLANETS.map(p => ({
+    planet: p,
+    nature: getFunctionalNature(p, lagnaSignIdx),
+    houses: getOwnedHouses(p, lagnaSignIdx),
+  }))
+  return {
+    recommended: results.filter(r => r.nature === 'yogakaraka' || r.nature === 'benefic'),
+    avoid:       results.filter(r => r.nature === 'malefic'),
+  }
+}
+
 // ── Classical remedies (Navaratna gemstones, colours, mantra, charity) ────────
 // Gemstones — especially Blue Sapphire (Saturn), Hessonite (Rahu) and Cat's Eye
 // (Ketu) — are classically considered powerful and can backfire if wrong for the
@@ -116,6 +156,14 @@ export async function GET() {
     const adContext = adLord ? buildPlanetContext(adLord, chart, lagnaSignIdx) : null
     const remedies   = REMEDIES[mdLord] ?? null
 
+    // Personalized gemstone recommendation — based on which houses each planet
+    // RULES for this Lagna (Yogakaraka/Trikona lords), not on the running dasha.
+    // This is how a real astrologer determines "your" gemstones.
+    const { recommended: gemstonePlanets, avoid: avoidPlanets } = getPersonalizedGemstones(lagnaSignIdx)
+    const personalizedGemstones = gemstonePlanets.map(g => ({ ...g, remedy: REMEDIES[g.planet] }))
+    const mdLordNature = getFunctionalNature(mdLord, lagnaSignIdx)
+    const mdLordIsFunctionalMalefic = mdLordNature === 'malefic'
+
     // ── Groq AI narrative — grounded in real house/dignity data, not generic ──
     const systemPrompt = `You are Daivam — a warm, wise Vedic astrologer specialising in Dasha Phala (results of planetary periods).
 Base your reading on classical Brihat Parashara Hora Shastra principles: a Dasha lord's results are shaped chiefly by (a) the house it currently occupies, (b) the house(s) it owns as lord, and (c) its dignity (exalted / debilitated / own sign / neutral).
@@ -131,6 +179,7 @@ Current Mahadasha lord: ${mdLord}
 - Placed in house ${mdContext?.currentHouse} (sign: ${mdContext?.sign})
 - Owns house(s): ${mdContext?.ownedHouses?.length ? mdContext.ownedHouses.join(', ') : 'none (lunar node — no house rulership)'}
 - Dignity: ${mdContext?.dignity ?? 'Neutral (no special dignity)'}
+- Functional nature for this Lagna: ${mdLordNature}${mdLordIsFunctionalMalefic ? ' (a functional malefic for this Lagna — mention this gently as a reason for extra mindfulness, without being alarming)' : ''}
 
 Current Antardasha lord: ${adLord ?? 'unavailable'}
 ${adContext ? `- Placed in house ${adContext.currentHouse} (sign: ${adContext.sign})
@@ -154,10 +203,12 @@ Provide a personalised Dasha Fal reading for this period.`
     const narrative = completion.choices[0]?.message?.content ?? ''
 
     const dashaFal = {
-      mahadasha:  { lord: mdLord, ...mdContext },
+      mahadasha:  { lord: mdLord, ...mdContext, functionalNature: mdLordNature, isFunctionalMalefic: mdLordIsFunctionalMalefic },
       antardasha: adLord ? { lord: adLord, ...adContext } : null,
       yogini:     { name: yogini ?? null, planet: yoginiPlanet ?? null },
-      remedies,
+      remedies,               // dasha-lord's classical remedy (timing-based, secondary)
+      personalizedGemstones,  // Lagna-based Yogakaraka/Trikona recommendations (primary, evergreen)
+      avoidGemstones: avoidPlanets,
       narrative,
     }
     await setCached(supabase, user.id, 'dasha-fal', cacheKey, dashaFal)
