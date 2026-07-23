@@ -55,6 +55,48 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
   const [pob, setPob] = useState(profile?.place_of_birth || '')
   const [gender, setGender] = useState(profile?.gender || '')
 
+  // ── Place-of-birth autocomplete ──
+  const [placeSuggestions, setPlaceSuggestions] = useState<{ display_name: string; lat: number; lng: number }[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [suggestLoading, setSuggestLoading] = useState(false)
+  const [selectedPlace, setSelectedPlace] = useState<{ display_name: string; lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    // Editing the text after picking a suggestion invalidates the cached coords
+    if (selectedPlace && pob !== selectedPlace.display_name) setSelectedPlace(null)
+
+    if (pob.trim().length < 3) {
+      setPlaceSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setSuggestLoading(true)
+        const res = await fetch(`/api/geocode?suggest=1&place=${encodeURIComponent(pob)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setPlaceSuggestions(data.suggestions || [])
+          setShowSuggestions(true)
+        }
+      } catch {
+        // silent — autocomplete is a convenience, not required for save to work
+      } finally {
+        setSuggestLoading(false)
+      }
+    }, 400) // debounce — avoids firing on every keystroke
+
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pob])
+
+  function handleSelectSuggestion(s: { display_name: string; lat: number; lng: number }) {
+    setPob(s.display_name)
+    setSelectedPlace(s)
+    setShowSuggestions(false)
+  }
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
@@ -63,7 +105,10 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
   }, [])
 
   async function geocodePlace(place: string) {
-    const res = await fetch(`/api/geocode?place=${encodeURIComponent(place)}`)
+    const url = selectedPlace && selectedPlace.display_name === place
+      ? `/api/geocode?lat=${selectedPlace.lat}&lng=${selectedPlace.lng}&place=${encodeURIComponent(place)}`
+      : `/api/geocode?place=${encodeURIComponent(place)}`
+    const res = await fetch(url)
     if (!res.ok) return null
     return res.json() as Promise<{ lat: number; lng: number; timezone: string; display_name: string }>
   }
@@ -242,17 +287,45 @@ export default function ProfileForm({ profile, userId }: { profile: Profile | nu
               />
             </div>
           </div>
-          <div>
+          <div style={{ position: 'relative' }}>
             <label style={labelStyle}>Place of birth</label>
             <input
-              type="text" 
+              type="text"
               style={inputStyle}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
+              onFocus={e => { handleFocus(e); if (placeSuggestions.length > 0) setShowSuggestions(true) }}
+              onBlur={e => { handleBlur(e); setTimeout(() => setShowSuggestions(false), 150) }}
               placeholder="City, State e.g. Mumbai"
-              value={pob} 
+              value={pob}
               onChange={e => setPob(e.target.value)}
+              autoComplete="off"
             />
+            {suggestLoading && (
+              <div style={{ position: 'absolute', right: 12, top: 38, fontSize: 12, color: 'var(--text-muted, #888)' }}>
+                <Loader2 size={14} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
+              </div>
+            )}
+            {showSuggestions && placeSuggestions.length > 0 && (
+              <ul style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20,
+                marginTop: 4, padding: 4, listStyle: 'none',
+                background: 'var(--bg-page)', color: 'var(--text-primary)', border: '1px solid var(--orange-border)',
+                borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.3)', maxHeight: 220, overflowY: 'auto',
+              }}>
+                {placeSuggestions.map((s, i) => (
+                  <li
+                    key={i}
+                    onMouseDown={() => handleSelectSuggestion(s)}
+                    style={{
+                      padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 14,
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--orange-glow)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    {s.display_name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Info note */}

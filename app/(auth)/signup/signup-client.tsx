@@ -25,6 +25,43 @@ export default function SignupClient() {
   const [tob, setTob] = useState('')
   const [pob, setPob] = useState('')
   const [gender, setGender] = useState('')
+
+  // ── Place-of-birth autocomplete (works pre-auth — see /api/geocode) ──
+  const [placeSuggestions, setPlaceSuggestions] = useState<{ display_name: string; lat: number; lng: number }[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [selectedPlace, setSelectedPlace] = useState<{ display_name: string; lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    if (selectedPlace && pob !== selectedPlace.display_name) setSelectedPlace(null)
+
+    if (pob.trim().length < 3) {
+      setPlaceSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/geocode?suggest=1&place=${encodeURIComponent(pob)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setPlaceSuggestions(data.suggestions || [])
+          setShowSuggestions(true)
+        }
+      } catch {
+        // silent — autocomplete is a convenience, not required to submit
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pob])
+
+  function handleSelectSuggestion(s: { display_name: string; lat: number; lng: number }) {
+    setPob(s.display_name)
+    setSelectedPlace(s)
+    setShowSuggestions(false)
+  }
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace('/dashboard')
@@ -43,7 +80,7 @@ export default function SignupClient() {
     try {
       const { data, error: signupError } = await supabase.auth.signUp({
         email, password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
+        options: { emailRedirectTo: `${window.location.origin}/callback` }
       })
       if (signupError) throw signupError
       if (!data.user) throw new Error('Signup failed')
@@ -303,7 +340,30 @@ export default function SignupClient() {
                       </div>
                       <input type="text" required className="input-field"
                         placeholder="City, State, Country" style={{ paddingLeft: 38 }}
-                        value={pob} onChange={e => setPob(e.target.value)} />
+                        value={pob} onChange={e => setPob(e.target.value)}
+                        onFocus={() => { if (placeSuggestions.length > 0) setShowSuggestions(true) }}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                        autoComplete="off" />
+                      {showSuggestions && placeSuggestions.length > 0 && (
+                        <ul style={{
+                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20,
+                          marginTop: 4, padding: 4, listStyle: 'none',
+                          background: 'var(--bg-page)', color: 'var(--text-primary)', border: '1px solid var(--orange-border)',
+                          borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.3)', maxHeight: 220, overflowY: 'auto',
+                        }}>
+                          {placeSuggestions.map((s, i) => (
+                            <li
+                              key={i}
+                              onMouseDown={() => handleSelectSuggestion(s)}
+                              style={{ padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'var(--orange-glow)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              {s.display_name}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
 

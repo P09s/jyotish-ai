@@ -1,6 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// NOTE: app/(dashboard)/* is a Next.js route GROUP — the parentheses are
+// stripped from the URL, so these pages actually live at /kundali, /chat,
+// /profile, etc., NOT /dashboard/kundali. Listed explicitly here since a
+// startsWith('/dashboard') check would never match any real page path.
+const PROTECTED_PATHS = [
+  '/dashboard', '/kundali', '/chat', '/milan', '/numerology',
+  '/panchang', '/profile', '/shubh-ashubh', '/transits', '/bhavishya-fal',
+]
+
+function isProtectedPath(pathname: string) {
+  return PROTECTED_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -25,8 +38,8 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Redirect unauthenticated users away from dashboard
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  // Redirect unauthenticated users away from protected pages
+  if (!user && isProtectedPath(request.nextUrl.pathname)) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

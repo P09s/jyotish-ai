@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/app/lib/supabase/client'
 import Image from 'next/image'
@@ -17,11 +17,19 @@ export const metadata: Metadata = {
 
 export default function LoginClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const err = searchParams.get('error')
+    if (err === 'auth_failed') setError('Sign-in failed or expired — please try again.')
+    else if (err === 'missing_code') setError('Something went wrong during sign-in — please try again.')
+  }, [searchParams])
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace('/dashboard')

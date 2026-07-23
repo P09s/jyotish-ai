@@ -25,14 +25,19 @@ export default function TermsPage() {
       <nav className="lp-nav" role="navigation" aria-label="Main navigation">
         <Link href="/" className="lp-nav-brand" aria-label="Daivam home">
           <Image src="/logo.png" alt="Daivam Logo" width={24} height={24} priority />
-          <span className="lp-nav-name">Daivam</span>
+          <span className="lp-nav-name">DAIVAM AI</span>
         </Link>
+        <div className="lp-nav-links">
+          <a href="/#how" className="lp-nav-link">How it works</a>
+          <a href="/#features" className="lp-nav-link">Features</a>
+          <a href="/#demo" className="lp-nav-link">Live demo</a>
+        </div>
         <div className="lp-nav-actions">
           <ThemeToggle />
           <span className="lp-nav-divider" aria-hidden="true" />
-          <Link href="/login" className="btn-ghost">Sign in</Link>
-          <Link href="/signup" className="btn-primary">
-            Get started <ArrowRight size={13} />
+          <Link href="/login" className="btn-ghost nav-signin-btn">Sign in</Link>
+          <Link href="/signup" className="btn-primary nav-cta-btn">
+            <span>Get started</span><span className="hide-mobile">&nbsp;</span> <ArrowRight size={14} />
           </Link>
         </div>
       </nav>
