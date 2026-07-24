@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
-import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { groq, GROQ_MODEL_CHAT } from '@/app/lib/groq/client'
 import { CLASSICAL_PLANETS, getOwnedHouses, getFunctionalNature, REMEDIES } from '@/app/lib/jyotish/remedies'
 import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
 
 const CHAT_RATE_LIMIT = 20        // requests
 const CHAT_RATE_WINDOW_MS = 5 * 60 * 1000  // per 5 minutes
 const MAX_MESSAGES = 40
-const MAX_MESSAGE_CHARS = 4000
-const MAX_TOTAL_CHARS = 30000
+const MAX_MESSAGE_CHARS = 16000
+const MAX_TOTAL_CHARS = 80000
 
 export async function POST(request: Request) {
   try {
@@ -74,8 +74,14 @@ export async function POST(request: Request) {
 
     try {
       groqStream = await groq.chat.completions.create({
-        model: GROQ_MODEL,
-        max_tokens: 1024,
+        model: GROQ_MODEL_CHAT,
+        // gpt-oss-120b is a reasoning model — reasoning tokens are generated
+        // before the visible answer and count against this budget. Keeping
+        // reasoning_effort low (this is conversational Q&A, not a multi-step
+        // logic puzzle) and giving a generous token budget avoids the answer
+        // getting cut off mid-generation once reasoning eats into the cap.
+        max_completion_tokens: 2048,
+        reasoning_effort: 'low',
         temperature: 0.7,
         stream: true,
         messages: [
@@ -158,13 +164,16 @@ function digitalRoot(n: number): number {
 function buildSystemPrompt(profile: any, chart: any): string {
   const lines: string[] = []
 
+  const todayStr = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  })
+  const currentYear = new Date().getFullYear()
+
   lines.push(
-    `Today's date is ${new Date().toLocaleDateString('en-IN', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })}. Always use this as the current date in your answers.`
+    `Today's actual date is ${todayStr}. This is not a guess and not your training cutoff — it is live, current, and authoritative. Use it for every date/year reference in your answer.`
+  )
+  lines.push(
+    `If the seeker asks about "this year", "currently", "right now", or any career/life-area outlook without naming a year, that means ${currentYear} — not 2024, not 2025, not any other year you might otherwise default to. Never title or reference an outlook with a year other than ${currentYear} unless the seeker explicitly named a different year.`
   )
 
   lines.push(
@@ -184,7 +193,15 @@ function buildSystemPrompt(profile: any, chart: any): string {
   )
 
   lines.push(
-    `Keep responses to 3-4 paragraphs unless a detailed breakdown is explicitly asked for.`
+    `Give a substantive, specific answer grounded in the actual chart facts below (exact planets, houses, dignities, dasha timing) — not generic Jyotish platitudes that could apply to anyone. If a claim isn't tied to a specific fact from this person's chart, cut it.`
+  )
+
+  lines.push(
+    `Use whatever length and structure genuinely fits the question — a few tight sentences for a simple question, a longer explanation with a short list for a multi-part one. Don't pad a simple answer to hit a paragraph count, and don't compress a genuinely layered answer into a shallow 2-3 point summary just to keep it short.`
+  )
+
+  lines.push(
+    `Never end with a vague invitation like "let me know if you'd like to explore this further" or "feel free to ask if you want more details" — that's a filler hook, not real content. If there's a genuinely useful next question the seeker would naturally have, ask it specifically (referencing what it would cover) or just don't end with a question at all.`
   )
 
   lines.push(

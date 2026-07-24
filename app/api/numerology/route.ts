@@ -81,7 +81,8 @@ Provide a personalised numerology reading.`
 
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
-      max_tokens: 300,
+      max_completion_tokens: 700,
+      reasoning_effort: 'low',
       temperature: 0.7,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -96,7 +97,9 @@ Provide a personalised numerology reading.`
       bhagyank: { number: bhagyank, ...bhagyankInfo },
       narrative,
     }
-    await setCached(supabase, user.id, 'numerology', cacheKey, numerology)
+    if (narrative.trim().length > 40) {
+      await setCached(supabase, user.id, 'numerology', cacheKey, numerology)
+    }
 
     return NextResponse.json({ success: true, numerology })
   } catch (err: unknown) {

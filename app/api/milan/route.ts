@@ -369,7 +369,8 @@ Provide a personalised compatibility reading.`
 
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
-      max_tokens: 400,
+      max_completion_tokens: 900,
+      reasoning_effort: 'low',
       temperature: 0.7,
       messages: [
         { role: 'system', content: systemPrompt },

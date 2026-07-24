@@ -109,6 +109,35 @@ export default function ChatInterface({
         borderRadius: 5, fontSize: 13, fontFamily: 'monospace', color: 'var(--orange)'
       }}>{children}</code>
     ),
+    table: ({ children }: any) => (
+      <div style={{
+        overflowX: 'auto', margin: '10px 0 16px',
+        borderRadius: 10, border: '1px solid var(--orange-border)',
+      }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 480, fontSize: 14 }}>
+          {children}
+        </table>
+      </div>
+    ),
+    thead: ({ children }: any) => (
+      <thead style={{ background: 'var(--orange-glow)' }}>{children}</thead>
+    ),
+    tbody: ({ children }: any) => <tbody>{children}</tbody>,
+    tr: ({ children }: any) => (
+      <tr style={{ borderBottom: '1px solid var(--orange-border)' }}>{children}</tr>
+    ),
+    th: ({ children }: any) => (
+      <th style={{
+        textAlign: 'left', padding: '10px 14px', fontWeight: 600,
+        color: 'var(--orange)', whiteSpace: 'nowrap',
+      }}>{children}</th>
+    ),
+    td: ({ children }: any) => (
+      <td style={{
+        textAlign: 'left', padding: '10px 14px', verticalAlign: 'top',
+        lineHeight: 1.6, color: 'var(--text-primary)',
+      }}>{children}</td>
+    ),
     hr: () => (
       <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '16px 0' }} />
     ),

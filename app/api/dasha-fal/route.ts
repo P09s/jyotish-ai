@@ -124,7 +124,8 @@ Provide a personalised Dasha Fal reading for this period.`
 
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
-      max_tokens: 400,
+      max_completion_tokens: 900,
+      reasoning_effort: 'low',
       temperature: 0.7,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -143,7 +144,12 @@ Provide a personalised Dasha Fal reading for this period.`
       avoidGemstones: avoidPlanets,
       narrative,
     }
-    await setCached(supabase, user.id, 'dasha-fal', cacheKey, dashaFal)
+    // Only cache real content — an empty or clipped completion (e.g. reasoning
+    // eating the whole token budget) shouldn't get stuck as the cached result
+    // until the chart changes.
+    if (narrative.trim().length > 40) {
+      await setCached(supabase, user.id, 'dasha-fal', cacheKey, dashaFal)
+    }
 
     return NextResponse.json({ success: true, dashaFal })
   } catch (err: unknown) {

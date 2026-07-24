@@ -157,7 +157,8 @@ Provide today's Shubh-Ashubh reading.`
 
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
-      max_tokens: 350,
+      max_completion_tokens: 800,
+      reasoning_effort: 'low',
       temperature: 0.7,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -177,7 +178,9 @@ Provide today's Shubh-Ashubh reading.`
       },
       narrative,
     }
-    await setCached(supabase, user.id, 'shubh-ashubh', cacheKey, shubhAshubh)
+    if (narrative.trim().length > 40) {
+      await setCached(supabase, user.id, 'shubh-ashubh', cacheKey, shubhAshubh)
+    }
 
     return NextResponse.json({ success: true, shubhAshubh })
   } catch (err: unknown) {

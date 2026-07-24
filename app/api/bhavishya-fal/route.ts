@@ -115,7 +115,8 @@ Provide a personalised Bhavishya Fal reading covering these four life areas.`
 
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
-      max_tokens: 500,
+      max_completion_tokens: 1000,
+      reasoning_effort: 'low',
       temperature: 0.7,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -126,7 +127,9 @@ Provide a personalised Bhavishya Fal reading covering these four life areas.`
     const narrative = completion.choices[0]?.message?.content ?? ''
 
     const bhavishyaFal = { areas, narrative }
-    await setCached(supabase, user.id, 'bhavishya-fal', cacheKey, bhavishyaFal)
+    if (narrative.trim().length > 40) {
+      await setCached(supabase, user.id, 'bhavishya-fal', cacheKey, bhavishyaFal)
+    }
 
     return NextResponse.json({ success: true, bhavishyaFal })
   } catch (err: unknown) {
