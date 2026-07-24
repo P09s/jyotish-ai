@@ -282,7 +282,11 @@ export default function KundaliPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      // getSession() reads the already-verified session locally (no network
+      // round-trip) — middleware already ran the authoritative getUser()
+      // check for this exact navigation before this component ever mounted.
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
       if (!user) { router.push('/login'); return }
 
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()

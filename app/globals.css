@@ -275,6 +275,36 @@ body::before {
 }
 
 /* ══════════════════════════════════════════════════
+   SKELETON LOADERS (route-level loading.tsx)
+   Pure CSS shimmer — no JS needed, so it paints the
+   instant Next.js swaps into a new route segment.
+══════════════════════════════════════════════════ */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-surface2);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--orange) 14%, transparent),
+    transparent
+  );
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
+
+/* ══════════════════════════════════════════════════
    BUTTONS (shared)
 ══════════════════════════════════════════════════ */
 .btn-primary {
