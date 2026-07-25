@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fusionstrings/panchangam": "^0.2.0",
+    "@huggingface/inference": "^4.13.23",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
     "astronomy-engine": "^2.1.19",

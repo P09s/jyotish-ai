@@ -5,9 +5,18 @@ import { createPortal } from 'react-dom'
 import { HelpCircle, X, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat' | 'login' | 'signup' | 'numerology' | 'bhavishya-fal' | 'shubh-ashubh'
+type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat' | 'login' | 'signup' | 'numerology' | 'bhavishya-fal' | 'shubh-ashubh' | 'spouse-portrait'
 
 const HELP_DATA: Record<PageName, { title: string; content: React.ReactNode }> = {
+  'spouse-portrait': {
+    title: 'Your Spouse Portrait',
+    content: (
+      <>
+        <p style={{ marginBottom: 12 }}><strong>How it&apos;s built:</strong> We read your 7th house (marriage house) lord&apos;s placement and dignity, plus Venus and Mars, and translate those classical signals into temperament, vibe, and style traits.</p>
+        <p><strong>An artistic impression:</strong> The portrait is a stylized illustration generated from those traits — not a literal prediction of your spouse&apos;s face. Think of it as a mood board, not a photograph.</p>
+      </>
+    )
+  },
   dashboard: {
     title: 'Dashboard Overview',
     content: (

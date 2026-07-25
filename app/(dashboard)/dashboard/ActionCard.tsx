@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Star, MessageCircle, User, ChevronRight, Sun, Globe, Heart, Hash, Sparkles, Moon } from 'lucide-react'
+import { Star, MessageCircle, User, ChevronRight, Sun, Globe, Heart, Hash, Sparkles, Moon, Image as ImageIcon } from 'lucide-react'
 
 const icons = {
+  image: { default: <ImageIcon size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <ImageIcon size={20} color="var(--orange)" strokeWidth={1.5} /> },
   star: { default: <Star size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <Star size={20} color="var(--orange)" strokeWidth={1.5} /> },
   message: { default: <MessageCircle size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <MessageCircle size={20} color="var(--orange)" strokeWidth={1.5} /> },
   user: { default: <User size={20} color="var(--text-muted)" strokeWidth={1.5} />, featured: <User size={20} color="var(--orange)" strokeWidth={1.5} /> },
@@ -21,7 +22,7 @@ type Props = {
   title: string
   desc: string
   tag: string
-  iconName: 'star' | 'message' | 'user' | 'sun' | 'globe' | 'heart' | 'hash' | 'sparkles' | 'moon'
+  iconName: 'star' | 'message' | 'user' | 'sun' | 'globe' | 'heart' | 'hash' | 'sparkles' | 'moon' | 'image'
   featured?: boolean
 }
 

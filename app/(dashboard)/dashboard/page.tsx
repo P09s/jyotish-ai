@@ -30,11 +30,20 @@ export default async function DashboardPage() {
     iconName: 'message' as const,
   }
 
+  // Gated behind a flag rather than removed — the feature is fully built,
+  // just paused until there's budget for real image-gen credits (HF's free
+  // tier covers roughly 3 generations/month total, shared across every
+  // user — nowhere near enough for a public launch). Flip
+  // NEXT_PUBLIC_SPOUSE_PORTRAIT_ENABLED=true in env once that's sorted.
+  // Defaults to hidden if unset, so it can't accidentally go live.
+  const spousePortraitEnabled = process.env.NEXT_PUBLIC_SPOUSE_PORTRAIT_ENABLED === 'true'
+
   const gridCards = [
     { href: '/kundali', tag: 'Chart', title: 'View Kundali', desc: 'Lagna chart, planetary positions & all 12 houses', iconName: 'star' as const },
     { href: '/panchang', tag: 'Today', title: 'Daily Panchang', desc: 'Tithi, nakshatra & auspicious timings', iconName: 'sun' as const },
     { href: '/transits', tag: 'Live', title: 'Transits', desc: "Today's planets over your natal chart", iconName: 'globe' as const },
     { href: '/milan', tag: 'Love', title: 'Kundali Matching', desc: 'Check compatibility with your partner', iconName: 'heart' as const },
+    ...(spousePortraitEnabled ? [{ href: '/spouse-portrait', tag: 'New', title: 'Spouse Portrait', desc: 'An AI impression of your future partner, from your chart', iconName: 'image' as const }] : []),
     { href: '/numerology', tag: 'Ank', title: 'Numerology', desc: 'Your Mulank & Bhagyank from your birth date', iconName: 'hash' as const },
     { href: '/bhavishya-fal', tag: 'Future', title: 'Bhavishya Fal', desc: 'Career, marriage, wealth & health predictions', iconName: 'sparkles' as const },
     { href: '/shubh-ashubh', tag: 'Today', title: 'Shubh Ashubh', desc: "Today's favorability — Tara & Chandra Bala", iconName: 'moon' as const },

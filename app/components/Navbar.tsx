@@ -6,7 +6,7 @@ import { Sun, ArrowLeft, LogOut, ChevronLeft } from 'lucide-react'
 import { ThemeToggle } from '@/app/components/ThemeProvider'
 import HelpButton from '@/app/components/HelpButton'
 
-type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat' | 'numerology' | 'bhavishya-fal' | 'shubh-ashubh'
+type PageName = 'dashboard' | 'kundali' | 'milan' | 'panchang' | 'profile' | 'transits' | 'chat' | 'numerology' | 'bhavishya-fal' | 'shubh-ashubh' | 'spouse-portrait'
 
 interface NavbarProps {
   page: PageName
