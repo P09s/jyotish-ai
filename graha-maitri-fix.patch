@@ -1,8 +1,25 @@
 diff --git a/app/api/milan/route.ts b/app/api/milan/route.ts
-index f94bc08..f034910 100644
+index f94bc08..c05ce15 100644
 --- a/app/api/milan/route.ts
 +++ b/app/api/milan/route.ts
-@@ -173,7 +173,11 @@ function relationOf(a: string, b: string): 'friend'|'neutral'|'enemy' {
+@@ -12,10 +12,12 @@ import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+ const MILAN_RATE_LIMIT = 8            // requests
+ const MILAN_RATE_WINDOW_MS = 10 * 60 * 1000  // per 10 minutes
+ const MAX_NAME_CHARS = 80
+-// Sanity cap on the raw chart payload — a real chart object (planets, houses,
+-// lagna, dasha data) runs a few KB; anything past this is either a bug on the
+-// client or someone trying to pad tokens into the Groq call.
+-const MAX_CHART_JSON_BYTES = 20_000
++// Sanity cap on the raw chart payload. Real charts include full Vimshottari +
++// Yogini dasha timelines (each with nested antardashas), so a single chart
++// commonly runs ~20-25KB — and this endpoint receives TWO charts (chartA +
++// chartB) per request, comfortably 40-50KB together. 150KB leaves headroom
++// for that while still blocking genuinely abusive/padded payloads.
++const MAX_CHART_JSON_BYTES = 150_000
+ 
+ // ── Constants ─────────────────────────────────────────────────────────────────
+ const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
+@@ -173,7 +175,11 @@ function relationOf(a: string, b: string): 'friend'|'neutral'|'enemy' {
    return 'neutral'
  }
  
@@ -15,7 +32,7 @@ index f94bc08..f034910 100644
  function friendship(a: string, b: string): 'friend'|'neutral'|'enemy' {
    const ab = relationOf(a, b)
    const ba = relationOf(b, a)
-@@ -185,10 +189,15 @@ function friendship(a: string, b: string): 'friend'|'neutral'|'enemy' {
+@@ -185,10 +191,15 @@ function friendship(a: string, b: string): 'friend'|'neutral'|'enemy' {
  function calcGrahaMaitri(moonSignA: string, moonSignB: string): number {
    const lordA = SIGN_LORD[moonSignA] ?? 'Moon'
    const lordB = SIGN_LORD[moonSignB] ?? 'Moon'

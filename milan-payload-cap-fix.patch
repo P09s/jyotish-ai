@@ -1,0 +1,19 @@
+--- a/app/api/milan/route.ts
++++ b/app/api/milan/route.ts
+@@ -12,10 +12,12 @@
+ const MILAN_RATE_LIMIT = 8            // requests
+ const MILAN_RATE_WINDOW_MS = 10 * 60 * 1000  // per 10 minutes
+ const MAX_NAME_CHARS = 80
+-// Sanity cap on the raw chart payload — a real chart object (planets, houses,
+-// lagna, dasha data) runs a few KB; anything past this is either a bug on the
+-// client or someone trying to pad tokens into the Groq call.
+-const MAX_CHART_JSON_BYTES = 20_000
++// Sanity cap on the raw chart payload. Real charts include full Vimshottari +
++// Yogini dasha timelines (each with nested antardashas), so a single chart
++// commonly runs ~20-25KB — and this endpoint receives TWO charts (chartA +
++// chartB) per request, comfortably 40-50KB together. 150KB leaves headroom
++// for that while still blocking genuinely abusive/padded payloads.
++const MAX_CHART_JSON_BYTES = 150_000
+ 
+ // ── Constants ─────────────────────────────────────────────────────────────────
+ const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
