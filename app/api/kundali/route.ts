@@ -2,6 +2,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import * as Astronomy from 'astronomy-engine'
+import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+
+// This is pure computation (no Groq/HF call), so the DoS risk here is CPU,
+// not billing — but it's also the only free lever that busts the cache keys
+// on dasha-fal/bhavishya-fal/numerology/shubh-ashubh (all keyed off this
+// chart's fingerprint or the resulting dasha lord). Rate-limiting chart
+// regeneration closes that loophole at the source instead of relying on
+// each downstream route to catch it.
+const KUNDALI_RATE_LIMIT = 15           // requests
+const KUNDALI_RATE_WINDOW_MS = 10 * 60 * 1000  // per 10 minutes
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
@@ -264,6 +274,14 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`kundali:${user.id}`, KUNDALI_RATE_LIMIT, KUNDALI_RATE_WINDOW_MS)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many chart generations — please wait a moment and try again.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+      )
+    }
 
     const { date_of_birth, time_of_birth, latitude, longitude, timezone } = await request.json()
     if (!date_of_birth || latitude == null || longitude == null)

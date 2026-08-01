@@ -4,6 +4,27 @@ import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
 import { getCached, setCached, chartFingerprint } from '@/app/lib/cache/route-cache'
 import { InferenceClient } from '@huggingface/inference'
+import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+
+// The per-user cache already limits a given user to one HF image call per
+// chart (see cacheKey below), but that's not the binding constraint — HF's
+// free tier is a small credit pool SHARED ACROSS EVERY USER (see .env.example).
+// A per-user limit alone doesn't stop 50 different users each cashing in
+// their "one free call" the same afternoon and blowing the shared budget for
+// everyone. So this route needs two layers:
+//   1. Per-user: stops one account from grinding through gender variants /
+//      chart regenerations.
+//   2. Global: a single shared counter across all users, sized to the actual
+//      HF quota. Tune GLOBAL_LIMIT to match whatever your HF plan allows —
+//      this defaults conservatively to the free-tier number called out in
+//      .env.example. Requires Upstash (UPSTASH_REDIS_REST_URL/TOKEN) to be
+//      set for the global count to be real across serverless instances; the
+//      in-memory fallback still helps on a single instance but won't hold
+//      once you scale beyond one.
+const SPOUSE_PORTRAIT_USER_LIMIT = 3
+const SPOUSE_PORTRAIT_USER_WINDOW_MS = 24 * 60 * 60 * 1000       // per user, per day
+const SPOUSE_PORTRAIT_GLOBAL_LIMIT = 3
+const SPOUSE_PORTRAIT_GLOBAL_WINDOW_MS = 30 * 24 * 60 * 60 * 1000 // shared, per ~30 days
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 
@@ -78,6 +99,14 @@ export async function GET(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const userLimit = await checkRateLimit(`spouse-portrait:${user.id}`, SPOUSE_PORTRAIT_USER_LIMIT, SPOUSE_PORTRAIT_USER_WINDOW_MS)
+    if (!userLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many portrait requests — please try again tomorrow.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(userLimit.retryAfterMs / 1000)) } }
+      )
+    }
+
     const { data: chartRow, error: chartErr } = await supabase
       .from('kundali_charts')
       .select('chart_data, created_at')
@@ -128,6 +157,18 @@ export async function GET(request: Request) {
     const cacheKey = `${chartFingerprint(chart)}:${spouseGender ?? 'unspecified'}`
     const cached = await getCached(supabase, user.id, 'spouse-portrait', cacheKey)
     if (cached) return NextResponse.json({ success: true, spousePortrait: cached })
+
+    // Cache miss means we're about to spend real Groq + HF credits — this is
+    // the one check that protects the shared HF pool, so it only counts
+    // requests that actually reach here (cache hits above are free and don't
+    // touch it).
+    const globalLimit = await checkRateLimit('spouse-portrait:global', SPOUSE_PORTRAIT_GLOBAL_LIMIT, SPOUSE_PORTRAIT_GLOBAL_WINDOW_MS)
+    if (!globalLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Spouse Portrait has hit its generation budget for this period — please check back later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(globalLimit.retryAfterMs / 1000)) } }
+      )
+    }
 
     const marriageHouse = houseContext(7, chart, lagnaSignIdx)
 

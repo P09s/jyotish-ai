@@ -2,6 +2,20 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+
+// Unlike dasha-fal/bhavishya-fal/numerology/shubh-ashubh, Milan has no cache —
+// chartA/chartB are supplied per-request (two people, not "your" chart), so
+// there's no stable cache key to hang a cache off. Rate limiting is the only
+// backstop here, so keep it tight: a real user runs a handful of matches per
+// session, not dozens.
+const MILAN_RATE_LIMIT = 8            // requests
+const MILAN_RATE_WINDOW_MS = 10 * 60 * 1000  // per 10 minutes
+const MAX_NAME_CHARS = 80
+// Sanity cap on the raw chart payload — a real chart object (planets, houses,
+// lagna, dasha data) runs a few KB; anything past this is either a bug on the
+// client or someone trying to pad tokens into the Groq call.
+const MAX_CHART_JSON_BYTES = 20_000
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
@@ -332,8 +346,29 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { chartA, chartB, nameA, nameB } = await request.json()
+    const { allowed, retryAfterMs } = await checkRateLimit(`milan:${user.id}`, MILAN_RATE_LIMIT, MILAN_RATE_WINDOW_MS)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many compatibility checks — please wait a bit before trying another match.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+      )
+    }
+
+    const rawBody = await request.text()
+    if (rawBody.length > MAX_CHART_JSON_BYTES) {
+      return NextResponse.json({ error: 'Request payload too large' }, { status: 413 })
+    }
+    const { chartA, chartB, nameA, nameB } = JSON.parse(rawBody)
     if (!chartA || !chartB) return NextResponse.json({ error: 'Both charts required' }, { status: 400 })
+
+    // nameA/nameB flow straight into the Groq prompt below — cap length so a
+    // long string can't pad the prompt or muddy the instructions the model
+    // is given.
+    const safeName = (n: unknown, fallback: string) =>
+      typeof n === 'string' && n.trim() ? n.trim().slice(0, MAX_NAME_CHARS) : fallback
+
+    const safeNameA = safeName(nameA, 'Person A')
+    const safeNameB = safeName(nameB, 'Person B')
 
     const ashtakoot = calcAshtakoot(chartA, chartB)
     const manglikA = checkManglik(chartA)
@@ -355,14 +390,14 @@ Keep your response to exactly 3 short paragraphs:
 Use Sanskrit terms with English in brackets. Be warm, not fatalistic. Never be longer than 180 words total.`
 
     const userMsg = `Analyse this Kundali Milan:
-Person A (${nameA || 'Person A'}): Moon in ${ashtakoot.moonSignA}, Nakshatra ${ashtakoot.nakA}, Lagna ${ashtakoot.lagnaA}
-Person B (${nameB || 'Person B'}): Moon in ${ashtakoot.moonSignB}, Nakshatra ${ashtakoot.nakB}, Lagna ${ashtakoot.lagnaB}
+Person A (${safeNameA}): Moon in ${ashtakoot.moonSignA}, Nakshatra ${ashtakoot.nakA}, Lagna ${ashtakoot.lagnaA}
+Person B (${safeNameB}): Moon in ${ashtakoot.moonSignB}, Nakshatra ${ashtakoot.nakB}, Lagna ${ashtakoot.lagnaB}
 
 Ashtakoot Score: ${ashtakoot.total}/36 (${ashtakoot.percent}%)
 Koota breakdown:
 ${ashtakoot.kootas.map(k => `- ${k.name}: ${k.score}/${k.max}`).join('\n')}
 
-Manglik Status: ${nameA || 'Person A'} ${manglikA.isManglik ? 'is Manglik' : 'is not Manglik'}${manglikA.cancelled ? ' (cancelled: ' + manglikA.reason + ')' : ''}; ${nameB || 'Person B'} ${manglikB.isManglik ? 'is Manglik' : 'is not Manglik'}${manglikB.cancelled ? ' (cancelled: ' + manglikB.reason + ')' : ''}.
+Manglik Status: ${safeNameA} ${manglikA.isManglik ? 'is Manglik' : 'is not Manglik'}${manglikA.cancelled ? ' (cancelled: ' + manglikA.reason + ')' : ''}; ${safeNameB} ${manglikB.isManglik ? 'is Manglik' : 'is not Manglik'}${manglikB.cancelled ? ' (cancelled: ' + manglikB.reason + ')' : ''}.
 ${manglikStatus.mutuallyCancelled ? 'Both are Manglik — dosha is mutually cancelled per classical rule.' : ''}
 
 Provide a personalised compatibility reading.`
@@ -383,8 +418,8 @@ Provide a personalised compatibility reading.`
     // ── Save to Supabase ─────────────────────────────────────────
     await supabase.from('milan_results').upsert({
       user_id: user.id,
-      name_a: nameA ?? 'Person A',
-      name_b: nameB ?? 'Person B',
+      name_a: safeNameA,
+      name_b: safeNameB,
       ashtakoot_score: ashtakoot.total,
       result_data: { ashtakoot, manglikStatus, narrative },
       created_at: new Date().toISOString(),

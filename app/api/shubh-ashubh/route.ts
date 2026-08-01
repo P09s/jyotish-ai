@@ -3,6 +3,11 @@ import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
 import * as Astronomy from 'astronomy-engine'
 import { getCached, setCached, chartFingerprint } from '@/app/lib/cache/route-cache'
+import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+
+// Backstop under the (date + chart-fingerprint) cache. See dasha-fal/route.ts.
+const SHUBH_ASHUBH_RATE_LIMIT = 15
+const SHUBH_ASHUBH_RATE_WINDOW_MS = 10 * 60 * 1000
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 const NAKSHATRAS = [
@@ -78,6 +83,14 @@ export async function GET() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`shubh-ashubh:${user.id}`, SHUBH_ASHUBH_RATE_LIMIT, SHUBH_ASHUBH_RATE_WINDOW_MS)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests — please wait a moment and try again.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+      )
+    }
 
     // Same duplicate-row-safe pattern used across kundali/dasha-fal/bhavishya-fal
     const { data: chartRow, error: chartErr } = await supabase

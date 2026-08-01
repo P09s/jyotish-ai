@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
 import { getCached, setCached } from '@/app/lib/cache/route-cache'
+import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+
+// Backstop under the date_of_birth cache — bustable by repeatedly editing the
+// profile's date of birth. See dasha-fal/route.ts for the same pattern.
+const NUMEROLOGY_RATE_LIMIT = 15
+const NUMEROLOGY_RATE_WINDOW_MS = 10 * 60 * 1000
 
 // ── Navagraha number-planet mapping (Ank Jyotish) ──────────────────────────────
 // Standard Vedic numerology: each digit 1-9 is ruled by one of the nine Grahas.
@@ -43,6 +49,14 @@ export async function GET() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`numerology:${user.id}`, NUMEROLOGY_RATE_LIMIT, NUMEROLOGY_RATE_WINDOW_MS)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests — please wait a moment and try again.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+      )
+    }
 
     const { data: profile } = await supabase
       .from('profiles').select('date_of_birth, full_name').eq('id', user.id).single()

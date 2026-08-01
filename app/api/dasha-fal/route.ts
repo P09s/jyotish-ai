@@ -3,6 +3,13 @@ import { createClient } from '@/app/lib/supabase/server'
 import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
 import { getCached, setCached, chartFingerprint } from '@/app/lib/cache/route-cache'
 import { SIGNS, SIGN_LORD, KENDRA, TRIKONA, DUSTHANA, CLASSICAL_PLANETS, getHouseLord, getOwnedHouses, getFunctionalNature, REMEDIES } from '@/app/lib/jyotish/remedies'
+import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+
+// The cache (keyed on dasha lord + chart fingerprint) covers normal use, but
+// it's bustable by repeatedly regenerating the chart via /api/kundali. This
+// is the backstop for that path.
+const DASHA_FAL_RATE_LIMIT = 15
+const DASHA_FAL_RATE_WINDOW_MS = 10 * 60 * 1000
 
 // Classical dignity — only defined for the 7 grahas (Rahu/Ketu dignity is
 // disputed across traditions, so it is intentionally left uncalculated).
@@ -49,6 +56,14 @@ export async function GET() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`dasha-fal:${user.id}`, DASHA_FAL_RATE_LIMIT, DASHA_FAL_RATE_WINDOW_MS)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests — please wait a moment and try again.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+      )
+    }
 
     // kundali_charts can hold more than one row per user (see the same handling
     // in app/api/kundali/route.ts's GET handler) — order by created_at and take
