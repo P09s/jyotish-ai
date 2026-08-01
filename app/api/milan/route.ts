@@ -173,7 +173,11 @@ function relationOf(a: string, b: string): 'friend'|'neutral'|'enemy' {
   return 'neutral'
 }
 
-// Classical rule: friend in one direction + enemy in the other = neutral overall
+// Classical Panchadha Maitri scoring — asymmetric planetary relationships are
+// common (e.g. Moon lists Mercury as a friend, but Mercury lists Moon as an
+// enemy), so this must be scored per-direction, not collapsed to a single
+// friend/neutral/enemy bucket. Used for both the 5-point Graha Maitri score
+// AND to detect a fully-mutual "friend" relation for Bhakoot cancellation.
 function friendship(a: string, b: string): 'friend'|'neutral'|'enemy' {
   const ab = relationOf(a, b)
   const ba = relationOf(b, a)
@@ -185,10 +189,15 @@ function friendship(a: string, b: string): 'friend'|'neutral'|'enemy' {
 function calcGrahaMaitri(moonSignA: string, moonSignB: string): number {
   const lordA = SIGN_LORD[moonSignA] ?? 'Moon'
   const lordB = SIGN_LORD[moonSignB] ?? 'Moon'
-  const rel = friendship(lordA, lordB)
-  if (rel === 'friend') return 5
-  if (rel === 'neutral') return 3
-  return 0
+  const ab = relationOf(lordA, lordB)
+  const ba = relationOf(lordB, lordA)
+
+  if (ab === 'friend' && ba === 'friend') return 5
+  if ((ab === 'friend' && ba === 'neutral') || (ab === 'neutral' && ba === 'friend')) return 4
+  if (ab === 'neutral' && ba === 'neutral') return 3
+  if ((ab === 'friend' && ba === 'enemy') || (ab === 'enemy' && ba === 'friend')) return 1
+  if ((ab === 'neutral' && ba === 'enemy') || (ab === 'enemy' && ba === 'neutral')) return 0.5
+  return 0 // enemy <-> enemy
 }
 
 // 6. Gana (6 points) — temperament
