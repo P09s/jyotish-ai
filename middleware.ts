@@ -8,6 +8,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const PROTECTED_PATHS = [
   '/dashboard', '/kundali', '/chat', '/milan', '/numerology',
   '/panchang', '/profile', '/shubh-ashubh', '/transits', '/bhavishya-fal',
+  '/spouse-portrait',
 ]
 
 function isProtectedPath(pathname: string) {

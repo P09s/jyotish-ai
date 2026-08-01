@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   const rateLimitKey = user
     ? `geocode:${user.id}`
     : `geocode-anon:${request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'}`
-  const { allowed } = checkRateLimit(rateLimitKey, 30, 60 * 1000)
+  const { allowed } = await checkRateLimit(rateLimitKey, 30, 60 * 1000)
   if (!allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   try {

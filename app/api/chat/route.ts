@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { allowed, retryAfterMs } = checkRateLimit(`chat:${user.id}`, CHAT_RATE_LIMIT, CHAT_RATE_WINDOW_MS)
+    const { allowed, retryAfterMs } = await checkRateLimit(`chat:${user.id}`, CHAT_RATE_LIMIT, CHAT_RATE_WINDOW_MS)
     if (!allowed) {
       return NextResponse.json(
         { error: 'Too many requests — please wait a moment before sending another message.' },
