@@ -1,0 +1,51 @@
+diff --git a/app/(dashboard)/milan/page.tsx b/app/(dashboard)/milan/page.tsx
+index fcec043..3f90fc8 100644
+--- a/app/(dashboard)/milan/page.tsx
++++ b/app/(dashboard)/milan/page.tsx
+@@ -8,6 +8,8 @@ import { Sun, ArrowLeft, Heart, Loader2, AlertTriangle, ChevronDown, ChevronUp,
+ import { ThemeToggle } from '@/app/components/ThemeProvider'
+ import HelpButton from '@/app/components/HelpButton'
+ import Navbar from '@/app/components/Navbar'
++import ReactMarkdown from 'react-markdown'
++import remarkGfm from 'remark-gfm'
+ 
+ // ── Types ─────────────────────────────────────────────────────────────────────
+ interface Koota {
+@@ -123,6 +125,24 @@ export default function MilanPage() {
+   const [result, setResult] = useState<{ ashtakoot: AshtakootResult; narrative: string } | null>(null)
+   const [showAllKootas, setShowAllKootas] = useState(false)
+ 
++  const mdComponents = {
++    p: ({ children }: any) => (
++      <p style={{ margin: '0 0 12px 0', lineHeight: 1.8, fontSize: 14 }}>{children}</p>
++    ),
++    strong: ({ children }: any) => (
++      <strong style={{ color: 'var(--orange)', fontWeight: 600 }}>{children}</strong>
++    ),
++    em: ({ children }: any) => (
++      <em style={{ color: 'var(--orange)', fontStyle: 'italic' }}>{children}</em>
++    ),
++    ul: ({ children }: any) => (
++      <ul style={{ paddingLeft: 22, margin: '6px 0 12px', listStyleType: 'disc' }}>{children}</ul>
++    ),
++    ol: ({ children }: any) => (
++      <ol style={{ paddingLeft: 22, margin: '6px 0 12px' }}>{children}</ol>
++    ),
++  }
++
+   useEffect(() => {
+     const checkMobile = () => setIsMobile(window.innerWidth < 768)
+     checkMobile()
+@@ -391,8 +411,10 @@ export default function MilanPage() {
+                 <p style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>
+                   Jyotish Reading
+                 </p>
+-                <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+-                  {result.narrative}
++                <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
++                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
++                    {result.narrative}
++                  </ReactMarkdown>
+                 </div>
+               </div>
+             )}
