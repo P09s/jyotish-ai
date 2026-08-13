@@ -1,14 +1,99 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
-import { groq, GROQ_MODEL_CHAT } from '@/app/lib/groq/client'
+import Groq from 'groq-sdk'
+import { createChatCompletionWithFallback } from '@/app/lib/groq/client'
 import { CLASSICAL_PLANETS, getOwnedHouses, getFunctionalNature, REMEDIES } from '@/app/lib/jyotish/remedies'
 import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
 
 const CHAT_RATE_LIMIT = 20        // requests
 const CHAT_RATE_WINDOW_MS = 5 * 60 * 1000  // per 5 minutes
-const MAX_MESSAGES = 40
+// The client always sends the FULL accumulated conversation (see
+// ChatInterface.tsx), not just recent turns, so a long-but-completely-normal
+// session can genuinely reach dozens of messages. MAX_MESSAGES only needs to
+// guard against a pathological/scripted payload now — buildChatBudget below
+// already safely trims however much history actually gets forwarded to Groq,
+// regardless of how many messages exist, so this doesn't need to be tight.
+const MAX_MESSAGES = 300
 const MAX_MESSAGE_CHARS = 16000
-const MAX_TOTAL_CHARS = 80000
+const MAX_TOTAL_CHARS = 300000
+
+// ── What actually gets forwarded to Groq (separate from the request-size
+// sanity caps above, which just bound what a client is allowed to send) ────
+//
+// A message-COUNT cap (the original "last 10 messages" version of this) is
+// not enough on its own: Groq's free tier enforces 8,000 tokens/minute per
+// model, and — confirmed against real request logs — it counts
+// input_tokens + max_completion_tokens (the full reserved completion budget,
+// not just what's actually generated) against that ceiling on every single
+// request. With verbose readings, even 4-5 exchanges' worth of "last 10
+// messages" plus the chart-grounding system prompt was enough to blow past
+// 8,000 on one request — which a retry/fallback can't fix, since ALL THREE
+// models in GROQ_CHAT_MODEL_CHAIN share that identical 8K/min ceiling. The
+// only real fix is guaranteeing the request itself can't get that big.
+//
+// A flat, low max_completion_tokens (the first attempt at this — 1024) fixes
+// that but creates a worse problem: this system prompt deliberately asks for
+// long, multi-section, structured answers, and 1024 tokens routinely wasn't
+// enough — real requests came back with output stopped exactly at 1024,
+// mid-sentence, with unclosed markdown. A visibly broken answer is worse
+// than an occasional retry delay.
+//
+// So instead of a flat completion cap, the budget is adaptive: reserve room
+// for the FULL desired completion length while trimming history, then only
+// shrink the actual completion budget below that if the system prompt +
+// kept history genuinely leaves no room — which should only happen in the
+// rare case where even the single latest message (always kept, see
+// trimHistoryToTokenBudget below) is unusually large on its own.
+//
+// ~3.5 chars/token (a bit more conservative than the common ~4 rule of
+// thumb) plus TPM_SAFETY_MARGIN below both build in slack for this being an
+// estimate, not an exact token count — real usage came in higher than a /4
+// estimate predicted.
+const approxTokens = (s: string) => Math.ceil(s.length / 3.5)
+
+const GROQ_TPM_LIMIT = 8000              // Groq free-tier ceiling, identical across every model in the chain
+const TPM_SAFETY_MARGIN = 800            // slack for token-estimate imprecision
+const DESIRED_MAX_COMPLETION_TOKENS = 2048
+const MIN_COMPLETION_TOKENS = 512        // below this, a "complete" answer isn't really complete either — see chatBudget
+
+// Keeps the most recent messages that fit within tokenBudget (working
+// backwards from the latest), always including at least the single most
+// recent message even if it alone doesn't fit — dropping the user's actual
+// question isn't an acceptable way to stay under budget.
+function trimHistoryToTokenBudget(
+  messages: { role: 'user' | 'assistant'; content: string }[],
+  tokenBudget: number
+): { role: 'user' | 'assistant'; content: string }[] {
+  const kept: typeof messages = []
+  let remaining = tokenBudget
+
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const t = approxTokens(messages[i].content)
+    if (kept.length > 0 && t > remaining) break
+    remaining -= t
+    kept.unshift(messages[i])
+  }
+
+  return kept
+}
+
+// Trims history to fit alongside the system prompt AND a full-length
+// completion, then hands back however much completion budget is actually
+// left over (normally the full DESIRED_MAX_COMPLETION_TOKENS — only reduced
+// below that if the single latest message alone pushed input past what
+// trimming can fix).
+function buildChatBudget(systemPrompt: string, messages: { role: 'user' | 'assistant'; content: string }[]) {
+  const systemTokens = approxTokens(systemPrompt)
+  const ceiling = GROQ_TPM_LIMIT - TPM_SAFETY_MARGIN
+
+  const historyBudget = Math.max(0, ceiling - systemTokens - DESIRED_MAX_COMPLETION_TOKENS)
+  const recentMessages = trimHistoryToTokenBudget(messages, historyBudget)
+
+  const inputTokens = systemTokens + recentMessages.reduce((sum, m) => sum + approxTokens(m.content), 0)
+  const maxCompletionTokens = Math.max(MIN_COMPLETION_TOKENS, Math.min(DESIRED_MAX_COMPLETION_TOKENS, ceiling - inputTokens))
+
+  return { recentMessages, maxCompletionTokens }
+}
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +123,7 @@ export async function POST(request: Request) {
 
     if (messages.length > MAX_MESSAGES) {
       return NextResponse.json(
-        { error: `Too many messages in one request (max ${MAX_MESSAGES}).` },
+        { error: `This conversation has gotten very long (max ${MAX_MESSAGES} messages). Please start a new conversation.` },
         { status: 400 }
       )
     }
@@ -79,45 +164,59 @@ export async function POST(request: Request) {
     const chart = chartRow?.chart_data ?? null
 
     const systemPrompt = buildSystemPrompt(profile, chart)
+    const { recentMessages, maxCompletionTokens } = buildChatBudget(systemPrompt, messages)
 
-    // ── Start Groq stream ──────────────────────────────────────────
-    let groqStream
+    // ── Start Groq stream (with per-model rate-limit fallback) ──────
+    let groqStream: AsyncIterable<Groq.Chat.Completions.ChatCompletionChunk>
+    let modelUsed: string
+    let usedFallback: boolean
 
     try {
-      groqStream = await groq.chat.completions.create({
-        model: GROQ_MODEL_CHAT,
-        // gpt-oss-120b is a reasoning model — reasoning tokens are generated
-        // before the visible answer and count against this budget. Keeping
-        // reasoning_effort low (this is conversational Q&A, not a multi-step
-        // logic puzzle) and giving a generous token budget avoids the answer
-        // getting cut off mid-generation once reasoning eats into the cap.
-        max_completion_tokens: 2048,
-        reasoning_effort: 'low',
+      ;({ stream: groqStream, modelUsed, usedFallback } = await createChatCompletionWithFallback({
+        maxCompletionTokens,
         temperature: 0.7,
-        stream: true,
         messages: [
           {
             role: 'system',
             content: systemPrompt,
           },
-          ...messages.map((m: { role: 'user' | 'assistant'; content: string }) => ({
+          ...recentMessages.map((m: { role: 'user' | 'assistant'; content: string }) => ({
             role: m.role,
             content: m.content,
           })),
         ],
-      })
+      }))
     } catch (err: unknown) {
-      if (err instanceof Error && err.message.includes('rate_limit')) {
+      // Groq returns this as a 429 when a model's daily/minute budget is
+      // genuinely exhausted, but as a 413 ("Request too large") when a
+      // single request's own size (input + reserved completion tokens)
+      // exceeds the TPM ceiling outright — a *different* HTTP status for
+      // effectively the same underlying limit, so RateLimitError alone
+      // (429-only) doesn't catch the 413 case. Checking the body's error
+      // code catches both uniformly.
+      const isRateLimitLike = err instanceof Groq.APIError && (err.error as { code?: string } | undefined)?.code === 'rate_limit_exceeded'
+
+      if (isRateLimitLike) {
+        // A 413 means the request itself is too big for any model in the
+        // chain to accept (they all share the same 8K/min ceiling — a
+        // fallback model can't rescue an oversized single request), so
+        // retrying later won't help; the user needs a shorter conversation.
+        const requestTooLarge = err.status === 413
         return NextResponse.json(
           {
-            error:
-              'Daily free limit reached. Please try again tomorrow.',
+            error: requestTooLarge
+              ? 'This conversation has gotten too long to process in one go. Please start a new conversation.'
+              : 'Daily free limit reached across all available models. Please try again tomorrow.',
           },
-          { status: 429 }
+          { status: requestTooLarge ? 413 : 429 }
         )
       }
 
-      throw err
+      // Never forward a raw provider error (which can include internal
+      // details like org IDs) to the client — log it server-side and
+      // return a generic message instead.
+      console.error('Chat API error (Groq call):', err)
+      return NextResponse.json({ error: 'Chat failed, please try again.' }, { status: 500 })
     }
 
     // ── Pipe Groq async iterable → Web ReadableStream ──────────────
@@ -146,17 +245,19 @@ export async function POST(request: Request) {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
         'X-Accel-Buffering': 'no',
+        // Lets the client show a subtle "answered by a backup model" note
+        // instead of a silent voice/style shift when the primary model's
+        // budget is exhausted for the day.
+        'X-Answered-By': usedFallback ? 'fallback' : 'primary',
+        'X-Model-Used': modelUsed,
       },
     })
   } catch (err: unknown) {
     console.error('Chat API error:', err)
 
-    return NextResponse.json(
-      {
-        error: err instanceof Error ? err.message : 'Chat failed',
-      },
-      { status: 500 }
-    )
+    // Generic fallback only — provider/internal error text is never sent to
+    // the client (see the inner catch above for the specific Groq cases).
+    return NextResponse.json({ error: 'Chat failed, please try again.' }, { status: 500 })
   }
 }
 

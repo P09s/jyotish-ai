@@ -7,7 +7,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { MotionDiv } from '@/app/components/motion-wrapper'
 
-type Message = { role: 'user' | 'assistant'; content: string }
+type Message = { role: 'user' | 'assistant'; content: string; answeredByBackup?: boolean }
 
 type Profile = {
   full_name: string | null
@@ -209,7 +209,12 @@ export default function ChatInterface({
       }
       if (!res.body) throw new Error('No response body')
 
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
+      // Set when the primary model's daily budget was exhausted and a
+      // fallback model answered instead — surfaced in the UI so a shift in
+      // tone/voice reads as "explained" rather than an unexplained glitch.
+      const answeredByBackup = res.headers.get('X-Answered-By') === 'fallback'
+
+      setMessages(prev => [...prev, { role: 'assistant', content: '', answeredByBackup }])
       setLoading(false)
       setIsStreaming(true)
       streamStarted = true
@@ -224,7 +229,7 @@ export default function ChatInterface({
         fullContent += decoder.decode(value, { stream: true })
         setMessages(prev => {
           const updated = [...prev]
-          updated[updated.length - 1] = { role: 'assistant', content: fullContent }
+          updated[updated.length - 1] = { role: 'assistant', content: fullContent, answeredByBackup }
           return updated
         })
       }
@@ -442,6 +447,14 @@ export default function ChatInterface({
                     m.content
                   ) : (
                     <>
+                      {m.answeredByBackup && m.content && (
+                        <div style={{
+                          fontSize: 11, color: 'var(--text-muted)', marginBottom: 6,
+                          fontStyle: 'italic',
+                        }}>
+                          Answered by a backup model — today&apos;s primary model capacity is in high demand.
+                        </div>
+                      )}
                       <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
                         {m.content}
                       </ReactMarkdown>
