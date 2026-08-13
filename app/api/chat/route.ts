@@ -43,6 +43,17 @@ export async function POST(request: Request) {
       )
     }
 
+    // Client only ever sends its own turns — 'system' (or anything else) here
+    // would let a caller inject a fake system-role message straight into the
+    // Groq call, overriding buildSystemPrompt's instructions. Reject instead
+    // of trusting the client-supplied role.
+    if (messages.some((m: any) => (m?.role !== 'user' && m?.role !== 'assistant') || typeof m?.content !== 'string')) {
+      return NextResponse.json(
+        { error: 'Each message must have role "user" or "assistant" and string content.' },
+        { status: 400 }
+      )
+    }
+
     const totalChars = messages.reduce((sum: number, m: any) => sum + (typeof m?.content === 'string' ? m.content.length : 0), 0)
     if (totalChars > MAX_TOTAL_CHARS || messages.some((m: any) => typeof m?.content === 'string' && m.content.length > MAX_MESSAGE_CHARS)) {
       return NextResponse.json(
@@ -89,8 +100,8 @@ export async function POST(request: Request) {
             role: 'system',
             content: systemPrompt,
           },
-          ...messages.map((m: { role: string; content: string }) => ({
-            role: m.role as 'user' | 'assistant',
+          ...messages.map((m: { role: 'user' | 'assistant'; content: string }) => ({
+            role: m.role,
             content: m.content,
           })),
         ],

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import * as Astronomy from 'astronomy-engine'
+import { SIGNS, SIGN_SANSKRIT, norm360, toJD, getLahiriAyanamsa, calcRahuTropical } from '@/app/lib/jyotish/astro'
 
-const SIGNS         = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
-const SIGN_SANSKRIT = ['Mesha','Vrishabha','Mithuna','Karka','Simha','Kanya','Tula','Vrishchika','Dhanu','Makara','Kumbha','Meena']
 const PLANETS = [
   { name:'Sun',     sanskrit:'Surya',   symbol:'☉', key:'Sun'     },
   { name:'Moon',    sanskrit:'Chandra', symbol:'☽', key:'Moon'    },
@@ -15,25 +14,6 @@ const PLANETS = [
   { name:'Rahu',    sanskrit:'Rahu',    symbol:'☊', key:'Rahu'    },
   { name:'Ketu',    sanskrit:'Ketu',    symbol:'☋', key:'Ketu'    },
 ]
-
-function norm360(x: number) { return ((x % 360) + 360) % 360 }
-function getLahiriAyanamsa(jd: number) {
-  const T = (jd - 2451545.0) / 36525.0
-  return 23.853056 + (50.29 / 3600) * T * 100
-}
-function toJD(y: number, m: number, d: number, h: number) {
-  if (m <= 2) { y--; m += 12 }
-  const A = Math.floor(y / 100), B = 2 - A + Math.floor(A / 4)
-  return Math.floor(365.25*(y+4716)) + Math.floor(30.6001*(m+1)) + d + h/24 + B - 1524.5
-}
-function calcRahuTropical(T: number) {
-  const T2=T*T, T3=T2*T, P=Math.PI/180
-  const D=norm360(297.85+445267.11*T), M=norm360(357.53+35999.05*T)
-  const Mp=norm360(134.96+477198.87*T), F=norm360(93.27+483202.02*T)
-  const Om=norm360(125.04452-1934.13626*T+0.00207*T2+T3/450000)
-  return norm360(Om -1.4979*Math.sin(2*(D-F)*P) -0.1500*Math.sin(M*P)
-    -0.1226*Math.sin(2*D*P) +0.1176*Math.sin(2*F*P) -0.0801*Math.sin(2*(Mp-F)*P))
-}
 
 // Which natal houses does a planet in `fromHouse` aspect?
 function aspectedHouses(name: string, h: number): number[] {

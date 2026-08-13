@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import * as Astronomy from 'astronomy-engine'
 import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+import {
+  SIGNS, SIGN_SANSKRIT, NAKSHATRAS, NAKSHATRA_LORD,
+  norm360, toRad, toDeg, toJD, getLahiriAyanamsa, calcRahuTropical, resolveUtcOffsetHours,
+} from '@/app/lib/jyotish/astro'
 
 // This is pure computation (no Groq/HF call), so the DoS risk here is CPU,
 // not billing — but it's also the only free lever that busts the cache keys
@@ -14,56 +18,8 @@ const KUNDALI_RATE_LIMIT = 15           // requests
 const KUNDALI_RATE_WINDOW_MS = 10 * 60 * 1000  // per 10 minutes
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
-const SIGN_SANSKRIT = ['Mesha','Vrishabha','Mithuna','Karka','Simha','Kanya','Tula','Vrishchika','Dhanu','Makara','Kumbha','Meena']
-const NAKSHATRAS = [
-  'Ashwini','Bharani','Krittika','Rohini','Mrigashira','Ardra',
-  'Punarvasu','Pushya','Ashlesha','Magha','Purva Phalguni','Uttara Phalguni',
-  'Hasta','Chitra','Swati','Vishakha','Anuradha','Jyeshtha',
-  'Mula','Purva Ashadha','Uttara Ashadha','Shravana','Dhanishtha','Shatabhisha',
-  'Purva Bhadrapada','Uttara Bhadrapada','Revati'
-]
-const NAKSHATRA_LORD = [
-  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury',
-  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury',
-  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury'
-]
 const DASHA_LORDS = ['Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury']
 const DASHA_YEARS: Record<string,number> = {Ketu:7,Venus:20,Sun:6,Moon:10,Mars:7,Rahu:18,Jupiter:16,Saturn:19,Mercury:17}
-
-// ── Math helpers ──────────────────────────────────────────────────────────────
-function norm360(x: number): number { return ((x % 360) + 360) % 360 }
-function toRad(d: number): number   { return d * Math.PI / 180 }
-function toDeg(r: number): number   { return r * 180 / Math.PI }
-
-// ── Julian Day ────────────────────────────────────────────────────────────────
-function toJD(year: number, month: number, day: number, hourUT: number): number {
-  if (month <= 2) { year--; month += 12 }
-  const A = Math.floor(year / 100)
-  const B = 2 - A + Math.floor(A / 4)
-  return Math.floor(365.25*(year+4716)) + Math.floor(30.6001*(month+1)) + day + hourUT/24 + B - 1524.5
-}
-
-// ── Lahiri Ayanamsa ───────────────────────────────────────────────────────────
-function getLahiriAyanamsa(T: number): number {
-  return 23.853056 + (50.29 / 3600) * T * 100
-}
-
-// ── Rahu true node ──────────────────────────────────────────────
-function calcRahuTropical(T: number): number {
-  const T2 = T * T, T3 = T2 * T
-  const D  = norm360(297.8501921 + 445267.1114034*T)
-  const M  = norm360(357.5291092 + 35999.0502909*T)
-  const Mp = norm360(134.9633964 + 477198.8675055*T)
-  const F  = norm360(93.2720950  + 483202.0175233*T)
-  const Om = norm360(125.04452 - 1934.13626*T + 0.00207*T2 + T3/450000)
-  const dOm = -1.4979*Math.sin(toRad(2*(D-F)))
-            - 0.1500*Math.sin(toRad(M))
-            - 0.1226*Math.sin(toRad(2*D))
-            + 0.1176*Math.sin(toRad(2*F))
-            - 0.0801*Math.sin(toRad(2*(Mp-F)))
-  return norm360(Om + dOm)
-}
 
 // ── Ascendant ───────────────────────────────
 function calcAscendantTropical(jd: number, latDeg: number, lonDeg: number): number {
@@ -284,8 +240,8 @@ export async function POST(request: Request) {
     }
 
     const { date_of_birth, time_of_birth, latitude, longitude, timezone } = await request.json()
-    if (!date_of_birth || latitude == null || longitude == null)
-      return NextResponse.json({ error: 'date_of_birth, latitude, longitude required' }, { status: 400 })
+    if (!date_of_birth || latitude == null || longitude == null || !timezone)
+      return NextResponse.json({ error: 'date_of_birth, latitude, longitude, timezone required' }, { status: 400 })
 
     const [year, month, day] = date_of_birth.split('-').map(Number)
     const [hour = 12, minute = 0] = (time_of_birth || '12:00').split(':').map(Number)
@@ -297,22 +253,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'date_of_birth or time_of_birth out of range' }, { status: 400 })
     }
 
-    const TZ_OFFSETS: Record<string,number> = {
-      'Asia/Kolkata':5.5,'Asia/Calcutta':5.5,
-      'Asia/Dubai':4,'Asia/Singapore':8,'Asia/Tokyo':9,'Asia/Bangkok':7,
-      'Asia/Shanghai':8,'Asia/Seoul':9,'Asia/Karachi':5,'Asia/Dhaka':6,
-      'America/New_York':-5,'America/Los_Angeles':-8,'America/Chicago':-6,
-      'America/Denver':-7,'America/Toronto':-5,'America/Sao_Paulo':-3,
-      'Europe/London':0,'Europe/Paris':1,'Europe/Berlin':1,'Europe/Moscow':3,
-      'Australia/Sydney':10,'Australia/Melbourne':10,'Pacific/Auckland':12,
-      'Africa/Cairo':2,'Africa/Johannesburg':2,
+    let utcOffset: number
+    try {
+      utcOffset = resolveUtcOffsetHours(timezone, year, month, day, hour, minute)
+    } catch {
+      return NextResponse.json({ error: 'Unrecognized timezone — please re-select your birth place.' }, { status: 400 })
     }
-    const utcOffset = TZ_OFFSETS[timezone] ?? 5.5
     const hourUT = (hour + minute / 60) - utcOffset
 
     const jd = toJD(year, month, day, hourUT)
     const T  = (jd - 2451545.0) / 36525.0
-    const ayanamsa = getLahiriAyanamsa(T)
+    const ayanamsa = getLahiriAyanamsa(jd)
 
     // Safely calculate absolute UTC time using milliseconds (prevents negative hour bugs)
     const localMs = Date.UTC(year, month - 1, day, hour, minute)

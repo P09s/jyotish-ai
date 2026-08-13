@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
 import * as Astronomy from 'astronomy-engine'
+import { NAKSHATRAS, NAKSHATRA_LORD, norm360, toJD, getLahiriAyanamsa } from '@/app/lib/jyotish/astro'
 
 // ── Lookup tables ─────────────────────────────────────────────────────────────
 const TITHIS = [
@@ -12,19 +13,6 @@ const TITHIS = [
   'Ekadashi','Dwadashi','Trayodashi','Chaturdashi','Amavasya',
 ]
 const PAKSHA = [...Array(15).fill('Shukla'), ...Array(15).fill('Krishna')]
-
-const NAKSHATRAS = [
-  'Ashwini','Bharani','Krittika','Rohini','Mrigashira','Ardra',
-  'Punarvasu','Pushya','Ashlesha','Magha','Purva Phalguni','Uttara Phalguni',
-  'Hasta','Chitra','Swati','Vishakha','Anuradha','Jyeshtha',
-  'Mula','Purva Ashadha','Uttara Ashadha','Shravana','Dhanishtha','Shatabhisha',
-  'Purva Bhadrapada','Uttara Bhadrapada','Revati',
-]
-const NAKSHATRA_LORD = [
-  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury',
-  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury',
-  'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury',
-]
 
 const YOGAS = [
   'Vishkambha','Preeti','Ayushman','Saubhagya','Shobhana','Atiganda',
@@ -54,20 +42,6 @@ const RAHU_SLOT:   Record<number,number> = { 0:8, 1:2, 2:7, 3:5, 4:6, 5:4, 6:3 }
 const GULIKA_SLOT: Record<number,number> = { 0:7, 1:6, 2:5, 3:4, 4:3, 5:2, 6:1 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function norm360(x: number) { return ((x % 360) + 360) % 360 }
-
-function getLahiriAyanamsa(jd: number): number {
-  const T = (jd - 2451545.0) / 36525.0
-  return 23.853056 + (50.29 / 3600) * T * 100
-}
-
-function toJD(y: number, m: number, d: number, h: number): number {
-  if (m <= 2) { y--; m += 12 }
-  const A = Math.floor(y / 100)
-  const B = 2 - A + Math.floor(A / 4)
-  return Math.floor(365.25*(y+4716)) + Math.floor(30.6001*(m+1)) + d + h/24 + B - 1524.5
-}
-
 function getKarana(moonSid: number, sunSid: number) {
   const diff = norm360(moonSid - sunSid)
   const idx  = Math.floor(diff / 6) % 60

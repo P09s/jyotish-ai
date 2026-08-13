@@ -4,33 +4,11 @@ import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
 import * as Astronomy from 'astronomy-engine'
 import { getCached, setCached, chartFingerprint } from '@/app/lib/cache/route-cache'
 import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
+import { SIGNS, NAKSHATRAS, norm360, toJD, getLahiriAyanamsa } from '@/app/lib/jyotish/astro'
 
 // Backstop under the (date + chart-fingerprint) cache. See dasha-fal/route.ts.
 const SHUBH_ASHUBH_RATE_LIMIT = 15
 const SHUBH_ASHUBH_RATE_WINDOW_MS = 10 * 60 * 1000
-
-const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
-const NAKSHATRAS = [
-  'Ashwini','Bharani','Krittika','Rohini','Mrigashira','Ardra',
-  'Punarvasu','Pushya','Ashlesha','Magha','Purva Phalguni','Uttara Phalguni',
-  'Hasta','Chitra','Swati','Vishakha','Anuradha','Jyeshtha',
-  'Mula','Purva Ashadha','Uttara Ashadha','Shravana','Dhanishtha','Shatabhisha',
-  'Purva Bhadrapada','Uttara Bhadrapada','Revati',
-]
-
-function norm360(x: number): number { return ((x % 360) + 360) % 360 }
-
-function getLahiriAyanamsa(jd: number): number {
-  const T = (jd - 2451545.0) / 36525.0
-  return 23.853056 + (50.29 / 3600) * T * 100
-}
-
-function toJD(y: number, m: number, d: number, h: number): number {
-  if (m <= 2) { y--; m += 12 }
-  const A = Math.floor(y / 100)
-  const B = 2 - A + Math.floor(A / 4)
-  return Math.floor(365.25*(y+4716)) + Math.floor(30.6001*(m+1)) + d + h/24 + B - 1524.5
-}
 
 // ── Tara Bala (same grouping used for Milan's Tara Koot) ──────────────────────
 // Groups 2,4,6,8,9 (Sampat, Kshema, Sadhaka, Mitra, Parama Mitra) are auspicious;
