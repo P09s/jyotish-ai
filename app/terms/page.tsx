@@ -69,7 +69,7 @@ export default function TermsPage() {
           <p className="legal-p">
             Daivam is an AI-powered Vedic astrology platform that generates personalised
             astrological charts (Kundali) and interpretations based on birth data you provide.
-            The Service includes Lagna charts, Navamsa charts, Vimshottari Dasha timelines,
+            The Service includes Lagna charts, Vimshottari Dasha timelines,
             live transit analysis, daily Panchang, and a conversational AI astrologer.
           </p>
           <p className="legal-p">

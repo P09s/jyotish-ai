@@ -49,11 +49,12 @@ const FEATURES = [
     wide: false,
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="1.5" aria-hidden="true">
-        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z" />
+        <path d="M9 15l3-6 3 6-3-2-3 2z" />
       </svg>
     ),
-    title: 'Navamsa (D9)',
-    body: 'Marriage chart and soul purpose — the deeper layer of your destiny and spiritual calling.',
+    title: 'Bhavishya Fal',
+    body: 'Career, marriage, wealth, and health — a grounded reading of what your chart is pointing toward.',
   },
   {
     wide: false,
@@ -100,7 +101,7 @@ const FEATURES = [
 ]
 
 const TRUST_ITEMS = [
-  'Vedic Kundali', 'Vimshottari Dasha', 'Lagna Chart', 'Navamsa D9',
+  'Vedic Kundali', 'Vimshottari Dasha', 'Lagna Chart', 'Bhavishya Fal',
   'All 9 Grahas', 'Nakshatra Analysis', 'Kundali Matching', 'Daily Panchang',
   'Career Timing', 'Marriage Guidance', 'Transit Analysis', 'AI Powered',
 ]
