@@ -175,17 +175,31 @@ function relationOf(a: string, b: string): 'friend'|'neutral'|'enemy' {
   return 'neutral'
 }
 
-// Classical Panchadha Maitri scoring — asymmetric planetary relationships are
-// common (e.g. Moon lists Mercury as a friend, but Mercury lists Moon as an
-// enemy), so this must be scored per-direction, not collapsed to a single
-// friend/neutral/enemy bucket. Used for both the 5-point Graha Maitri score
-// AND to detect a fully-mutual "friend" relation for Bhakoot cancellation.
-function friendship(a: string, b: string): 'friend'|'neutral'|'enemy' {
+// Asymmetric planetary relationships are common (e.g. Moon lists Mercury as
+// a friend, but Mercury lists Moon as an enemy) — the 5-point Graha Maitri
+// koota scores this per-direction on purpose (see calcGrahaMaitri below),
+// since that asymmetry is the whole point of that koota.
+//
+// Bhakoot cancellation is a separate concern: classical sources phrase the
+// cancellation condition as the lords being "paraspara mitra" (mutual
+// friends), which textually supports requiring both directions — but in
+// practice, most calculators people will cross-check against apply a
+// simpler symmetric friend/neutral/enemy read for this specific check
+// rather than the full asymmetric table. Following the stricter mutual-only
+// reading here made this app a consistent outlier (lower scores) against
+// what users see elsewhere for cases exactly like Moon/Mars (Mars→Moon is a
+// friend, Moon→Mars is only neutral) — so this check symmetrizes on purpose,
+// leaning toward whichever direction is more decisive when the two
+// directions disagree, rather than requiring them to agree.
+function symmetricFriendship(a: string, b: string): 'friend'|'neutral'|'enemy' {
   const ab = relationOf(a, b)
   const ba = relationOf(b, a)
-  if (ab === 'friend' && ba === 'friend') return 'friend'
-  if (ab === 'enemy' && ba === 'enemy') return 'enemy'
-  return 'neutral'
+  if (ab === ba) return ab
+  // Genuine conflict (one says friend, the other enemy — rare, e.g.
+  // Mercury/Moon) is inconclusive rather than a real signal either way.
+  if ((ab === 'friend' && ba === 'enemy') || (ab === 'enemy' && ba === 'friend')) return 'neutral'
+  if (ab === 'friend' || ba === 'friend') return 'friend'
+  return 'enemy' // one side enemy, other neutral
 }
 
 function calcGrahaMaitri(moonSignA: string, moonSignB: string): number {
@@ -239,7 +253,7 @@ function calcBhakoot(moonSignA: string, moonSignB: string): number {
   const lordA = SIGN_LORD[moonSignA]
   const lordB = SIGN_LORD[moonSignB]
   if (lordA === lordB) return 7        // same Rashi lord — fully cancelled
-  if (friendship(lordA, lordB) === 'friend') return 3.5  // friendly lords — softened
+  if (symmetricFriendship(lordA, lordB) === 'friend') return 3.5  // friendly lords — softened
   return 0
 }
 
