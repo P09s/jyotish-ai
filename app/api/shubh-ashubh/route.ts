@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
-import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { groq, GROQ_MODEL, classifyGroqError } from '@/app/lib/groq/client'
 import * as Astronomy from 'astronomy-engine'
 import { getCached, setCached, chartFingerprint } from '@/app/lib/cache/route-cache'
 import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
@@ -176,6 +176,7 @@ Provide today's Shubh-Ashubh reading.`
     return NextResponse.json({ success: true, shubhAshubh })
   } catch (err: unknown) {
     console.error('Shubh Ashubh error:', err)
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Shubh Ashubh calculation failed' }, { status: 500 })
+    const { message, status } = classifyGroqError(err)
+    return NextResponse.json({ error: message }, { status })
   }
 }

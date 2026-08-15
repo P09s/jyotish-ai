@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
-import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { groq, GROQ_MODEL, classifyGroqError } from '@/app/lib/groq/client'
 import { getCached, setCached, chartFingerprint } from '@/app/lib/cache/route-cache'
 import { SIGNS, SIGN_LORD, KENDRA, TRIKONA, DUSTHANA, CLASSICAL_PLANETS, getHouseLord, getOwnedHouses, getFunctionalNature, REMEDIES } from '@/app/lib/jyotish/remedies'
 import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
@@ -169,6 +169,7 @@ Provide a personalised Dasha Fal reading for this period.`
     return NextResponse.json({ success: true, dashaFal })
   } catch (err: unknown) {
     console.error('Dasha Fal error:', err)
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Dasha Fal calculation failed' }, { status: 500 })
+    const { message, status } = classifyGroqError(err)
+    return NextResponse.json({ error: message }, { status })
   }
 }

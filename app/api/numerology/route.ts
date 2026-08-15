@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
-import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { groq, GROQ_MODEL, classifyGroqError } from '@/app/lib/groq/client'
 import { getCached, setCached } from '@/app/lib/cache/route-cache'
 import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
 
@@ -118,6 +118,7 @@ Provide a personalised numerology reading.`
     return NextResponse.json({ success: true, numerology })
   } catch (err: unknown) {
     console.error('Numerology error:', err)
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Numerology calculation failed' }, { status: 500 })
+    const { message, status } = classifyGroqError(err)
+    return NextResponse.json({ error: message }, { status })
   }
 }

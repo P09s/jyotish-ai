@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
-import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { groq, GROQ_MODEL, classifyGroqError } from '@/app/lib/groq/client'
 import { getCached, setCached, chartFingerprint } from '@/app/lib/cache/route-cache'
 import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
 
@@ -148,6 +148,7 @@ Provide a personalised Bhavishya Fal reading covering these four life areas.`
     return NextResponse.json({ success: true, bhavishyaFal })
   } catch (err: unknown) {
     console.error('Bhavishya Fal error:', err)
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Bhavishya Fal calculation failed' }, { status: 500 })
+    const { message, status } = classifyGroqError(err)
+    return NextResponse.json({ error: message }, { status })
   }
 }

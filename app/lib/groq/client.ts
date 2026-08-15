@@ -4,6 +4,29 @@ export const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY!,
 })
 
+// Every GROQ_MODEL-backed route (numerology, dasha-fal, bhavishya-fal,
+// shubh-ashubh, milan) was catching Groq errors with `err.message`, which
+// for a Groq APIError is the raw provider JSON — exactly what chat/route.ts
+// used to leak to the screen on a rate limit before that got fixed. All five
+// of those routes share this single GROQ_MODEL's daily budget, so a traffic
+// spike hitting that shared pool would surface the same raw JSON on any of
+// them. Route catch blocks should call this instead of building their own
+// error message from a caught Groq error.
+export function classifyGroqError(err: unknown): { message: string; status: number } {
+  if (err instanceof Groq.APIError) {
+    const code = (err.error as { code?: string } | undefined)?.code
+    if (code === 'rate_limit_exceeded') {
+      // 413 = this single request's own size exceeded the per-minute
+      // ceiling outright; 429 = the model's budget window is exhausted.
+      // Different root cause, so different (still honest) message.
+      return err.status === 413
+        ? { message: 'That request was too large to process right now. Please try again.', status: 413 }
+        : { message: 'This feature is experiencing high demand right now. Please try again in a few minutes.', status: 429 }
+    }
+  }
+  return { message: 'Something went wrong generating this reading. Please try again.', status: 500 }
+}
+
 // NOTE: llama-3.1-8b-instant and llama-3.3-70b-versatile (the models this
 // file used previously) were both deprecated by Groq on 06/17/26, shutting
 // down 08/16/26. Using their official recommended replacements below —

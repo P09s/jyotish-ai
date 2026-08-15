@@ -1,7 +1,7 @@
 // app/api/milan/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase/server'
-import { groq, GROQ_MODEL } from '@/app/lib/groq/client'
+import { groq, GROQ_MODEL, classifyGroqError } from '@/app/lib/groq/client'
 import { checkRateLimit } from '@/app/lib/rate-limit/rate-limit'
 
 // Unlike dasha-fal/bhavishya-fal/numerology/shubh-ashubh, Milan has no cache —
@@ -439,6 +439,7 @@ Provide a personalised compatibility reading.`
     return NextResponse.json({ success: true, ashtakoot, manglikStatus, narrative })
   } catch (err: unknown) {
     console.error('Milan error:', err)
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Milan calculation failed' }, { status: 500 })
+    const { message, status } = classifyGroqError(err)
+    return NextResponse.json({ error: message }, { status })
   }
 }
